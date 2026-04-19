@@ -1,0 +1,89 @@
+{
+  "_comment": "Copy this file to config.json and adjust as needed.",
+
+  "port": 8080,
+
+  "client_id": "test-client",
+  "secret":    "test-secret",
+
+  "token_expiry_s": 3600,
+
+  "seed_data": true,
+
+  "storage": {
+    "_comment": [
+      "'memory' — all data is lost when the server stops (default).",
+      "'file'   — data is written as JSON files under 'path' and survives restarts.",
+      "           users       → {path}/users.json",
+      "           persons     → {path}/persons.json  (contracts embedded)",
+      "When seed_data is true and data files already have records, seeding is skipped."
+    ],
+    "type": "memory",
+    "path": "./data"
+  },
+
+  "rate_limit": {
+    "_comment": [
+      "Token-bucket rate limiting applied per resource group (users vs persons+contracts).",
+      "requests_per_10seconds: requests allowed per 10-second window. 0 or negative = disabled.",
+      "                        Internally divided by 10 to produce the per-second token-bucket rate.",
+      "burst: maximum number of requests allowed in a single instant.",
+      "       Must be >= 1 when limiting is enabled.",
+      "When the limit is exceeded the server responds with HTTP 429 and a Retry-After: 1 header."
+    ],
+    "users": {
+      "requests_per_10seconds": 0,
+      "burst": 10
+    },
+    "persons": {
+      "requests_per_10seconds": 0,
+      "burst": 10
+    }
+  },
+
+  "oidc": {
+    "_comment": [
+      "OpenID Connect SSO — leave discovery_url empty to disable.",
+      "discovery_url: IdP base URL; /.well-known/openid-configuration is appended automatically.",
+      "               Example: https://accounts.google.com  or  https://login.microsoftonline.com/{tenant}/v2.0",
+      "redirect_url:  must match the callback URL registered at the IdP.",
+      "scopes:        defaults to [openid, profile, email]. Add provider scopes for group claims (e.g. groups).",
+      "permissions_claim: name of the ID-token claim that holds group memberships.",
+      "               Common values: memberOf (Hello ID / AD), groups (Okta/Azure), roles.",
+      "               The value may be a JSON array or a comma-separated string.",
+      "Routes added when enabled:",
+      "  GET /oidc/login     — start SSO flow",
+      "  GET /oidc/callback  — IdP redirect target",
+      "  GET /oidc/logout    — clear session",
+      "  GET /oidc/me        — profile + permissions page",
+      "  GET /oidc/token     — issue API Bearer token for the logged-in user"
+    ],
+    "discovery_url":              "",
+    "client_id":                  "",
+    "client_secret":              "",
+    "redirect_url":               "http://localhost:8080/oidc/callback",
+    "scopes":                     ["openid", "profile", "email"],
+    "permissions_claim":          "memberOf",
+    "skip_signature_verification": false
+  },
+
+  "pagination": {
+    "_comment": [
+      "Controls paging for list endpoints (/api/users, /api/persons, /api/contracts, etc.).",
+      "Callers pass ?page=N&page_size=M query params.",
+      "  default_page_size: items per page when page_size is not supplied. Defaults to 20.",
+      "  max_page_size:     ceiling for page_size requests. Defaults to 100.",
+      "The persons settings also apply to contract list endpoints.",
+      "All list responses now include a 'pagination' object:",
+      "  { page, page_size, total, total_pages }"
+    ],
+    "users": {
+      "default_page_size": 20,
+      "max_page_size": 100
+    },
+    "persons": {
+      "default_page_size": 20,
+      "max_page_size": 100
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "_comment": "Copy this file to config.json and adjust as needed.",
+
+  "port": 8080,
+
+  "client_id": "test-client",
+  "secret":    "test-secret",
+
+  "token_expiry_s": 3600,
+
+  "seed_data": true,
+
+  "oidc": {
+    "discovery_url":               "",
+    "client_id":                   "",
+    "client_secret":               "",
+    "redirect_url":                "http://localhost:8080/oidc/callback",
+    "scopes":                      ["openid", "profile"],
+    "permissions_claim":           "memberOf",
+    "skip_signature_verification": true
+  },
+
+  "storage": {
+    "_type_options": ["memory", "file"],
+    "_comment": [
+      "'memory' — all data is lost when the server stops (default, good for one-off tests).",
+      "'file'   — data is written as JSON files under 'path' and survives restarts.",
+      "           users are saved to   {path}/users.json",
+      "           persons+contracts to {path}/persons.json",
+      "           Files are written atomically (temp-then-rename) so a crash mid-write",
+      "           will never leave a corrupt file.",
+      "When seed_data is true and a data file already has records, seeding is skipped",
+      "so existing data is preserved across restarts."
+    ],
+    "type": "file",
+    "path": "./data"
+  }
+}

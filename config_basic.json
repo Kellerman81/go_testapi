@@ -1,0 +1,7 @@
+{
+  "port": 8080,
+  "client_id": "test-client",
+  "secret": "test-secret",
+  "token_expiry_s": 3600,
+  "seed_data": true
+}

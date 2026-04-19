@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>go_testapi — API Reference</title>
+<style>
+  :root {
+    --bg:        #0f1117;
+    --surface:   #1a1d27;
+    --border:    #2a2d3a;
+    --text:      #e2e4ec;
+    --muted:     #7a7f99;
+    --accent:    #6c8ef7;
+    --GET:       #22c55e;
+    --POST:      #3b82f6;
+    --PUT:       #f59e0b;
+    --DELETE:    #ef4444;
+    --code-bg:   #12141e;
+    --sidebar-w: 260px;
+    font-size: 15px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    display: flex;
+  }
+
+  /* ---- sidebar ---- */
+  nav {
+    width: var(--sidebar-w);
+    min-height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+  .nav-logo {
+    padding: 20px 18px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-section {
+    padding: 14px 18px 4px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  nav a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 18px;
+    font-size: 13.5px;
+    color: var(--muted);
+    text-decoration: none;
+    border-radius: 0;
+    transition: color .15s, background .15s;
+  }
+  nav a:hover { color: var(--text); background: rgba(108,142,247,.08); }
+  nav a .badge {
+    font-size: 9.5px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 3px;
+    letter-spacing: .04em;
+    flex-shrink: 0;
+  }
+  .b-get    { background: rgba(34,197,94,.15);  color: var(--GET);    }
+  .b-post   { background: rgba(59,130,246,.15); color: var(--POST);   }
+  .b-put    { background: rgba(245,158,11,.15); color: var(--PUT);    }
+  .b-delete { background: rgba(239,68,68,.15);  color: var(--DELETE); }
+  .b-multi  { background: rgba(108,142,247,.15);color: var(--accent); }
+
+  /* ---- main content ---- */
+  main {
+    flex: 1;
+    max-width: 860px;
+    padding: 40px 48px 80px;
+  }
+
+  h1 { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+  h2 {
+    font-size: 19px; font-weight: 700;
+    margin: 52px 0 18px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    scroll-margin-top: 20px;
+  }
+  h3 { font-size: 15px; font-weight: 600; margin: 28px 0 10px; color: var(--text); }
+  p  { color: var(--muted); margin-bottom: 12px; }
+  ul { color: var(--muted); padding-left: 20px; margin-bottom: 12px; }
+  li { margin-bottom: 4px; }
+
+  .subtitle { color: var(--muted); font-size: 14px; margin-bottom: 32px; }
+
+  /* ---- info grid ---- */
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .info-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .info-card .label { font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .info-card .value { font-family: "JetBrains Mono", "Cascadia Code", "Consolas", monospace; font-size: 13px; color: var(--accent); word-break: break-all; }
+
+  /* ---- endpoint block ---- */
+  .endpoint {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .endpoint-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,.02);
+  }
+  .method {
+    font-family: monospace;
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: .06em;
+    padding: 3px 8px;
+    border-radius: 4px;
+    min-width: 56px;
+    text-align: center;
+  }
+  .method.GET    { background: rgba(34,197,94,.15);  color: var(--GET);    }
+  .method.POST   { background: rgba(59,130,246,.15); color: var(--POST);   }
+  .method.PUT    { background: rgba(245,158,11,.15); color: var(--PUT);    }
+  .method.DELETE { background: rgba(239,68,68,.15);  color: var(--DELETE); }
+  .path {
+    font-family: "JetBrains Mono","Cascadia Code","Consolas", monospace;
+    font-size: 13.5px;
+    color: var(--text);
+    flex: 1;
+  }
+  .path .param { color: #a78bfa; }
+  .endpoint-desc { color: var(--muted); font-size: 13px; padding: 0 16px 4px; }
+
+  .endpoint-body { padding: 12px 16px 16px; }
+
+  /* ---- parameter table ---- */
+  .param-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px; }
+  .param-table th {
+    text-align: left;
+    padding: 6px 10px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+  .param-table td { padding: 7px 10px; vertical-align: top; border-bottom: 1px solid rgba(255,255,255,.04); }
+  .param-table tr:last-child td { border-bottom: none; }
+  .param-name { font-family: monospace; font-size: 12.5px; color: #a78bfa; }
+  .param-type { font-family: monospace; font-size: 12px; color: var(--GET); }
+  .param-req  { font-size: 11px; color: var(--DELETE); font-weight: 600; }
+  .param-opt  { font-size: 11px; color: var(--muted); }
+  .param-desc { color: var(--muted); font-size: 13px; }
+
+  /* ---- code blocks ---- */
+  .tabs { display: flex; gap: 2px; margin-bottom: 0; }
+  .tab-btn {
+    background: none;
+    border: none;
+    padding: 7px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    border-radius: 6px 6px 0 0;
+    border: 1px solid transparent;
+    border-bottom: none;
+    transition: color .15s, background .15s;
+  }
+  .tab-btn.active { color: var(--text); background: var(--code-bg); border-color: var(--border); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 0 6px 6px 6px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    font-family: "JetBrains Mono","Cascadia Code","Consolas", monospace;
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: #c9d1d9;
+    margin: 0;
+  }
+  pre.solo { border-radius: 6px; }
+  .str  { color: #a5d6ff; }
+  .num  { color: #79c0ff; }
+  .key  { color: #d2a8ff; }
+  .bool { color: var(--GET); }
+  .cmt  { color: var(--muted); font-style: italic; }
+
+  code {
+    font-family: "JetBrains Mono","Cascadia Code","Consolas", monospace;
+    font-size: 12.5px;
+    background: rgba(108,142,247,.12);
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: var(--accent);
+  }
+
+  /* ---- notice / tip ---- */
+  .notice {
+    background: rgba(108,142,247,.08);
+    border: 1px solid rgba(108,142,247,.25);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 18px;
+  }
+  .notice strong { color: var(--accent); }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 16px 0 6px;
+  }
+
+  /* ---- auth method cards ---- */
+  .auth-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+  @media (max-width:720px) { .auth-grid { grid-template-columns: 1fr; } }
+  .auth-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .auth-card h3 { margin: 0 0 8px; font-size: 14px; color: var(--text); }
+  .auth-card p  { font-size: 13px; margin-bottom: 10px; }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ===== SIDEBAR ===== -->
+<nav>
+  <div class="nav-logo">go_testapi</div>
+
+  <div class="nav-section">Overview</div>
+  <a href="#overview">Connection</a>
+  <a href="#auth">Authentication</a>
+  <a href="#formats">Formats &amp; Headers</a>
+  <a href="#pagination">Pagination</a>
+  <a href="#ratelimit">Rate limiting</a>
+
+  <div class="nav-section">Users</div>
+  <a href="#users-list"><span class="badge b-get">GET</span>List users</a>
+  <a href="#users-export"><span class="badge b-get">GET</span>Export CSV</a>
+  <a href="#users-create"><span class="badge b-post">POST</span>Create user</a>
+  <a href="#users-get"><span class="badge b-get">GET</span>Get user</a>
+  <a href="#users-update"><span class="badge b-put">PUT</span>Update user</a>
+  <a href="#users-delete"><span class="badge b-delete">DEL</span>Delete user</a>
+  <a href="#users-enable"><span class="badge b-multi">ACT</span>Enable / Disable</a>
+  <a href="#users-perms"><span class="badge b-multi">ACT</span>Permissions</a>
+
+  <div class="nav-section">Persons</div>
+  <a href="#persons-list"><span class="badge b-get">GET</span>List persons</a>
+  <a href="#persons-export"><span class="badge b-get">GET</span>Export CSV</a>
+  <a href="#persons-create"><span class="badge b-post">POST</span>Create person</a>
+  <a href="#persons-get"><span class="badge b-get">GET</span>Get person</a>
+  <a href="#persons-update"><span class="badge b-put">PUT</span>Update person</a>
+  <a href="#persons-delete"><span class="badge b-delete">DEL</span>Delete person</a>
+
+  <div class="nav-section">Contracts</div>
+  <a href="#contracts-all"><span class="badge b-get">GET</span>All contracts</a>
+  <a href="#contracts-export"><span class="badge b-get">GET</span>Export CSV</a>
+  <a href="#contracts-list"><span class="badge b-get">GET</span>List by person</a>
+  <a href="#contracts-create"><span class="badge b-post">POST</span>Create contract</a>
+  <a href="#contracts-get"><span class="badge b-get">GET</span>Get contract</a>
+  <a href="#contracts-update"><span class="badge b-put">PUT</span>Update contract</a>
+  <a href="#contracts-delete"><span class="badge b-delete">DEL</span>Delete contract</a>
+
+  <div class="nav-section">SOAP</div>
+  <a href="#soap-overview">Overview &amp; WSDL</a>
+  <a href="#soap-ops">Operations</a>
+
+  <div class="nav-section">SSO</div>
+  <a href="#oidc-overview">OpenID Connect SSO</a>
+  <a href="#oidc-login"><span class="badge b-get">GET</span>Login</a>
+  <a href="#oidc-callback"><span class="badge b-get">GET</span>Callback</a>
+  <a href="#oidc-me"><span class="badge b-get">GET</span>Me (profile page)</a>
+  <a href="#oidc-token"><span class="badge b-get">GET</span>Get API token</a>
+  <a href="#oidc-logout"><span class="badge b-get">GET</span>Logout</a>
+
+  <div class="nav-section">Errors</div>
+  <a href="#errors">Error responses</a>
+</nav>
+
+<!-- ===== MAIN ===== -->
+<main>
+
+  <!-- HEADER -->
+  <h1>API Reference</h1>
+  <p class="subtitle">go_testapi · test server for API connector development</p>
+
+  <!-- OVERVIEW -->
+  <h2 id="overview">Connection</h2>
+
+  <div class="info-grid">
+    <div class="info-card"><div class="label">Base URL</div><div class="value">http://localhost:8080</div></div>
+    <div class="info-card"><div class="label">OAuth token endpoint</div><div class="value">POST /oauth/token</div></div>
+    <div class="info-card"><div class="label">SOAP endpoint</div><div class="value">POST /soap</div></div>
+    <div class="info-card"><div class="label">WSDL</div><div class="value">GET /soap</div></div>
+  </div>
+
+  <p>The port and credentials are configured in <code>config.json</code>. The defaults shown above apply when the file is absent or set to its initial values.</p>
+
+  <!-- AUTH -->
+  <h2 id="auth">Authentication</h2>
+  <p>Every endpoint under <code>/api/*</code> and <code>POST /soap</code> requires authentication. Two schemes are supported and can be used interchangeably.</p>
+
+  <div class="auth-grid">
+    <div class="auth-card">
+      <h3>Basic Authentication</h3>
+      <p>Encode <code>client_id:secret</code> as Base-64 and send it in every request.</p>
+      <pre class="solo">Authorization: Basic <span class="str">dGVzdC1jbGllbnQ6dGVzdC1zZWNyZXQ=</span></pre>
+    </div>
+    <div class="auth-card">
+      <h3>OAuth 2.0 — Client Credentials</h3>
+      <p>Exchange your credentials for a short-lived bearer token, then send that token on every request.</p>
+      <pre class="solo">Authorization: Bearer <span class="str">&lt;access_token&gt;</span></pre>
+    </div>
+  </div>
+
+  <div class="section-label">Obtaining a Bearer Token</div>
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="method POST">POST</span>
+      <span class="path">/oauth/token</span>
+    </div>
+    <div class="endpoint-body">
+      <p style="color:var(--muted);font-size:13px;margin-bottom:12px;">Send credentials as <code>application/x-www-form-urlencoded</code> or via HTTP Basic Auth header.</p>
+      <div class="section-label">Request body (form-encoded)</div>
+      <table class="param-table">
+        <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+        <tr><td class="param-name">grant_type</td><td class="param-type">string</td><td class="param-req">required</td><td class="param-desc">Must be <code>client_credentials</code></td></tr>
+        <tr><td class="param-name">client_id</td><td class="param-type">string</td><td class="param-opt">optional*</td><td class="param-desc">Client ID from config. Can be sent in Basic Auth header instead.</td></tr>
+        <tr><td class="param-name">client_secret</td><td class="param-type">string</td><td class="param-opt">optional*</td><td class="param-desc">Secret from config. Can be sent in Basic Auth header instead.</td></tr>
+      </table>
+      <div class="section-label">Response — 200 OK</div>
+      <pre class="solo">{
+  <span class="key">"access_token"</span>: <span class="str">"a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"</span>,
+  <span class="key">"token_type"</span>:   <span class="str">"Bearer"</span>,
+  <span class="key">"expires_in"</span>:   <span class="num">3600</span>
+}</pre>
+    </div>
+  </div>
+
+  <!-- FORMATS -->
+  <h2 id="formats">Response Formats &amp; Headers</h2>
+  <p>All REST endpoints return <strong>JSON</strong> by default. Switch to <strong>XML</strong> in two ways:</p>
+  <ul>
+    <li>Send <code>Accept: application/xml</code> (or <code>Accept: text/xml</code>) in the request header.</li>
+    <li>Append <code>?format=xml</code> to the URL — this takes priority over the header.</li>
+  </ul>
+  <p>For requests that carry a body, set <code>Content-Type: application/json</code> for JSON or <code>Content-Type: application/xml</code> for XML. All body examples below are shown as JSON.</p>
+  <p>The SOAP endpoint always uses XML regardless of these settings.</p>
+
+  <!-- PAGINATION -->
+  <h2 id="pagination">Pagination</h2>
+  <p>All list endpoints are paginated. Use the query parameters below to navigate pages. Defaults and ceilings are configured separately for users and persons (contracts share the persons settings).</p>
+
+  <table class="param-table" style="margin-bottom:18px">
+    <tr><th>Query param</th><th>Default</th><th>Description</th></tr>
+    <tr><td class="param-name">page</td><td class="param-type">1</td><td class="param-desc">1-based page number</td></tr>
+    <tr><td class="param-name">page_size</td><td class="param-type">20</td><td class="param-desc">Items per page. Capped at the configured maximum (default 100).</td></tr>
+  </table>
+
+  <p>Every list response includes a <code>pagination</code> object alongside the data:</p>
+  <pre class="solo">{
+  <span class="key">"users"</span>: [ <span class="cmt">/* items for this page */</span> ],
+  <span class="key">"pagination"</span>: {
+    <span class="key">"page"</span>:        <span class="num">2</span>,
+    <span class="key">"page_size"</span>:   <span class="num">20</span>,
+    <span class="key">"total"</span>:       <span class="num">57</span>,
+    <span class="key">"total_pages"</span>: <span class="num">3</span>,
+    <span class="key">"next_page"</span>:   <span class="str">"/api/users?page=3&amp;page_size=20"</span>  <span class="cmt">// empty string on last page</span>
+  }
+}</pre>
+
+  <div class="notice" style="margin-top:14px">
+    <strong>Config keys:</strong> <code>pagination.users.default_page_size</code> / <code>pagination.users.max_page_size</code>
+    and <code>pagination.persons.default_page_size</code> / <code>pagination.persons.max_page_size</code>.
+    Persons settings also apply to all contract list endpoints.
+  </div>
+
+  <!-- RATE LIMITING -->
+  <h2 id="ratelimit">Rate Limiting</h2>
+  <p>Token-bucket rate limiting can be enabled independently for users and persons (including contracts). When disabled (default) all requests pass through freely.</p>
+
+  <table class="param-table" style="margin-bottom:18px">
+    <tr><th>Config key</th><th>Type</th><th>Description</th></tr>
+    <tr><td class="param-name">rate_limit.users.requests_per_10seconds</td><td class="param-type">float</td><td class="param-desc">Requests allowed per 10-second window. <code>0</code> or negative = disabled. Divided by 10 internally to produce the per-second token-bucket rate.</td></tr>
+    <tr><td class="param-name">rate_limit.users.burst</td><td class="param-type">int</td><td class="param-desc">Maximum instantaneous requests (token-bucket burst).</td></tr>
+    <tr><td class="param-name">rate_limit.persons.requests_per_10seconds</td><td class="param-type">float</td><td class="param-desc">Same for persons &amp; contracts endpoints.</td></tr>
+    <tr><td class="param-name">rate_limit.persons.burst</td><td class="param-type">int</td><td class="param-desc">Burst for persons &amp; contracts.</td></tr>
+  </table>
+
+  <p>When the limit is exceeded the server responds with <strong>429 Too Many Requests</strong> and a <code>Retry-After: 1</code> header.</p>
+  <pre class="solo">HTTP/1.1 <span class="num">429</span> Too Many Requests
+Retry-After: <span class="num">1</span>
+
+{ <span class="key">"message"</span>: <span class="str">"rate limit exceeded — try again later"</span> }</pre>
+
+  <hr>
+
+  <!-- ================================================================ -->
+  <!-- USERS -->
+  <!-- ================================================================ -->
+  <h2 id="users">Users</h2>
+  <p>A <em>user</em> represents a login identity with a set of permissions.</p>
+
+  <div class="section-label">User object</div>
+  <table class="param-table" style="margin-bottom:24px">
+    <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+    <tr><td class="param-name">id</td><td class="param-type">string</td><td class="param-desc">Hex ID assigned on creation (read-only)</td></tr>
+    <tr><td class="param-name">username</td><td class="param-type">string</td><td class="param-desc">Unique login name</td></tr>
+    <tr><td class="param-name">email</td><td class="param-type">string</td><td class="param-desc">Email address</td></tr>
+    <tr><td class="param-name">first_name</td><td class="param-type">string</td><td class="param-desc">Given name</td></tr>
+    <tr><td class="param-name">last_name</td><td class="param-type">string</td><td class="param-desc">Family name</td></tr>
+    <tr><td class="param-name">enabled</td><td class="param-type">bool</td><td class="param-desc"><code>true</code> = active, <code>false</code> = locked</td></tr>
+    <tr><td class="param-name">permissions</td><td class="param-type">string[]</td><td class="param-desc">List of permission strings</td></tr>
+    <tr><td class="param-name">created_at</td><td class="param-type">datetime</td><td class="param-desc">ISO-8601 timestamp (read-only)</td></tr>
+    <tr><td class="param-name">updated_at</td><td class="param-type">datetime</td><td class="param-desc">ISO-8601 timestamp (read-only)</td></tr>
+  </table>
+
+  <!-- List users -->
+  <div class="endpoint" id="users-list">
+    <div class="endpoint-header">
+      <span class="method GET">GET</span>
+      <span class="path">/api/users</span>
+    </div>
+    <p class="endpoint-desc">Return users (paginated).</p>
+    <div class="endpoint-body">
+      <div class="section-label">Query parameters</div>
+      <table class="param-table">
+        <tr><th>Param</th><th>Default</th><th>Description</th></tr>
+        <tr><td class="param-name">page</td><td class="param-type">1</td><td class="param-desc">Page number (1-based)</td></tr>
+        <tr><td class="param-name">page_size</td><td class="param-type">config</td><td class="param-desc">Items per page (capped at users max)</td></tr>
+        <tr><td class="param-name">format</td><td class="param-type">json</td><td class="param-desc"><code>xml</code> for XML output</td></tr>
+      </table>
+      <div class="section-label">Response — 200 OK</div>
+      <pre class="solo">{
+  <span class="key">"users"</span>: [
+    {
+      <span class="key">"id"</span>:           <span class="str">"a1b2c3d4e5f6a7b8"</span>,
+      <span class="key">"username"</span>:     <span class="str">"alice"</span>,
+      <span class="key">"email"</span>:        <span class="str">"alice@example.com"</span>,
+      <span class="key">"first_name"</span>:   <span class="str">"Alice"</span>,
+      <span class="key">"last_name"</span>:    <span class="str">"Smith"</span>,
+      <span class="key">"enabled"</span>:      <span class="bool">true</span>,
+      <span class="key">"permissions"</span>:  [<span class="str">"read"</span>, <span class="str">"write"</span>],
+      <span class="key">"created_at"</span>:   <span class="str">"2026-01-01T10:00:00Z"</span>,
+      <span class="key">"updated_at"</span>:   <span class="str">"2026-01-01T10:00:00Z"</span>
+    }
+  ],
+  <span class="key">"pagination"</span>: {
+    <span class="key">"page"</span>: <span class="num">1</span>, <span class="key">"page_size"</span>: <span class="num">20</span>, <span class="key">"total"</span>: <span class="num">3</span>, <span class="key">"total_pages"</span>: <span class="num">1</span>
+  }
+}</pre>
+    </div>
+  </div>
+
+  <!-- Export users -->
+  <div class="endpoint" id="users-export">
+    <div class="endpoint-header">
+      <span class="method GET">GET</span>
+      <span class="path">/api/users/export</span>
+    </div>
+    <p class="endpoint-desc">Download all users as a CSV file. Returns every user (no pagination). The file is streamed with <code>Content-Disposition: attachment</code> so browsers save it directly.</p>
+    <div class="endpoint-body">
+      <div class="section-label">Response — 200 OK · text/csv</div>
+      <pre class="solo">id,username,email,first_name,last_name,enabled,permissions,created_at,updated_at
+a1b2c3d4,alice,alice@example.com,Alice,Smith,true,read; write,2026-01-01T10:00:00Z,2026-01-01T10:00:00Z
+b2c3d4e5,bob,bob@example.com,Bob,Jones,false,,2026-01-02T09:00:00Z,2026-01-02T09:00:00Z</pre>
+      <p style="color:var(--muted);font-size:13px;margin-top:10px">Multiple permissions are joined with <code>; </code> inside the cell.</p>
+    </div>
+  </div>
+
+  <!-- Create user -->
+  <div class="endpoint" id="users-create">
+    <div class="endpoint-header">
+      <span class="method POST">POST</span>
+      <span class="path">/api/users</span>
+    </div>
+    <p class="endpoint-desc">Create a new user. Username must be unique.</p>
+    <div class="endpoint-body">
+      <div class="section-label">Request body</div>
+      <table class="param-table">
+        <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+        <tr><td class="param-name">username</td><td class="param-type">string</td><td class="param-req">required</td><td class="param-desc">Unique login name</td></tr>
+        <tr><td class="param-name">email</td><td class="param-type">string</td><td class="param-opt">optional</td><td class="param-desc">Email address</td></tr>
+        <tr><td class="param-name">first_name</td><td class="param-type">string</td><td class="param-opt">optional</td><td class="param-desc">Given name</td></tr>
+        <tr><td class="param-name">last_name</td><td class="param-type">string</td><td class="param-opt">optional</td><td class="param-desc">Family name</td></tr>
+        <tr><td class="param-name">enabled</td><td class="param-type">bool</td><td class="param-opt">optional</td><td class="param-desc">Defaults to <code>false</code> if omitted</td></tr>
+      </table>
+      <div class="section-label">Response — 201 Created</div>
+      <pre class="solo"><span class="cmt">// Full user object with assigned id, created_at, updated_at</span></pre>
+      <div class="section-label" style="margin-top:10px">Errors</div>
+      <table class="param-table">
+        <tr><th>Status</th><th>Condition</th></tr>
+        <tr><td class="param-type">400</td><td class="param-desc">Missing or empty <code>username</code></td></tr>
+        <tr><td class="param-type">409</td><td class="param-desc">Username already taken</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Get user -->
+  <div class="endpoint" id="users-get">
+    <div class="endpoint-header">
+      <span class="method GET">GET</span>
+      <span class="path">/api/users/<span class="param">{id}</span></span>
+    </div>
+    <p class="endpoint-desc">Fetch a single user by ID.</p>
+    <div class="endpoint-body">
+      <div class="section-label">Path parameters</div>
+      <table class="param-table">
+        <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+        <tr><td class="param-name">id</td><td class="param-type">string</td><td class="param-desc">User ID</td></tr>
+      </table>
+      <div class="section-label">Response — 200 OK</div>
+      <pre class="solo"><span class="cmt">// Single user object</span></pre>
+      <div class="section-label" style="margin-top:10px">Errors</div>
+      <table class="param-table">
+        <tr><th>Status</th><th>Condition</th></tr>
+        <tr><td class="param-type">404</td><td class="param-desc">No user with that ID</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Update user -->
+  <div class="endpoint" id="users-update">
+    <div class="endpoint-header">
+      <span class="method PUT">PUT</span>
+      <span class="path">/api/users/<span class="param">{id}</span></span>
+    </div>
+    <p class="endpoint-desc">Update editable fields. Only non-empty fields in the body are applied — omitted fields keep their current value.</p>
+    <div class="endpoint-body">
+      <div class="section-label">Request body (all optional)</div>
+      <table class="param-table">
+        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+        <tr><td class="param-name">username</td><td class="param-type">string</td><td class="param-desc">New unique username</td></tr>
+        <tr><td class="param-name">email</td><td class="param-type">string</td><td class="param-desc">New email</td></tr>
+        <tr><td class="param-name">first_name</td><td class="param-type">string</td><td class="param-desc">New given name</td></tr>
+        <tr><td class="param-name">last_name</td><td class="param-type">string</td><td class="param-desc">New family name</td></tr>
+      </table>
+      <div class="section-label">Response — 200 OK</div>
+      <pre class="solo"><span class="cmt">// Updated user object</span></pre>
+      <div class="section-label" style="margin-top:10px">Errors</div>
+      <table class="param-table">
+        <tr><th>Status</th><th>Condition</th></tr>
+        <tr><td class="param-type">404</td><td class="param-desc">No user with that ID</td></tr>
+        <tr><td class="param-type">409</td><td class="param-desc">New username already taken</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Delete user -->
+  <div class="endpoint" id="users-delete">
+    <div class="endpoint-header">
+      <span class="method DELETE">DELETE</span>
+      <span class="path">/api/users/<span class="param">{id}</span></span>
+    </div>
+    <p class="endpoint-desc">Permanently remove a user.</p>
+    <div class="endpoint-body">
+      <div class="section-label">Response — 200 OK</div>
+      <pre class="solo">{ <span class="key">"message"</span>: <span class="str">"user deleted"</span> }</pre>
+      <div class="section-label" style="margin-top:10px">Errors</div>
+      <table class="param-table">
+        <tr><th>Status</th><th>Condition</th></tr>
+        <tr><td class="param-type">404</td><td class="param-desc">No user with that ID</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Enable / Disable -->
+  <div class="endpoint" id="users-enable">
+    <div class="endpoint-header">
+      <span class="method POST">POST</span>
+      <span class="path">/api/users/<span class="param">{id}</span>/enable</span>
+    </div>
+    <p class="endpoint-desc">Set <code>enabled = true</code>. No request body needed.</p>
+    <div class="endpoint-body">
+      <div class="section-label">Response — 200 OK</div>
+      <pre class="solo"><span class="cmt">// Updated user object with enabled: true</span></pre>
+    </div>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="method POST">POST</span>
+      <span class="path">/api/users/<span class="param">{id}</span>/disable</span>
+    </div>
+    <p class="endpoint-desc">Set <code>enabled = false</code>. No request body needed.</p>
+    <div class="endpoint-body">
+      <div class="section-label">Response — 200 OK</div>
+      <pre class="solo"><span class="cmt">// Updated user object with enabled: false</span></pre>
+    </div>
+  </div>
+
+  <!-- Permissions -->
+  <div class="endpoint" id="users-perms">
+    <div class="endpoint-header">
+      <span class="method GET">GET</span>
+      <span class="path">/api/users/<span class="param">{id}</span>/permissions</span>
+    </div>
+    <p class="endpoint-desc">Return the user's permission list.</p>
+    <div class="endpoint-body">
+      <div class="section-label">Response — 200 OK</div>
+      <pre class="solo">{ <span class="key">"permissions"</span>: [<span class="str">"read"</span>, <span class="str">"write"</span>] }</pre>
+    </div>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="method POST">POST</span>
+      <span class="path">/api/users/<span class="param">{id}</span>/permissions</span>
+    </div>
+    <p class="endpoint-desc">Add a permission. Idempotent — adding an existing value has no effect.</p>
+    <div class="endpoint-body">
+      <div class="section-label">Request body</div>
+      <table class="param-table">
+        <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+        <tr><td class="param-name">permission</td><td class="param-type">string</td><td class="param-req">required</td><td class="param-desc">Permission string to add</td></tr>
+      </table>
+      <div class="section-label">Response — 200 OK</div>
+      <pre class="solo"><span class="cmt">// Full updated permissions list</span>
+{ <span class="key">"permissions"</span>: [<span class="str">"read"</span>, <span class="str">"write"</span>, <span class="str">"admin"</span>] }</pre>
+    </div>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="method DELETE">DELETE</span>
+      <span class="path">/api/users/<span class="param">{id}</span>/permissions/<span class="param">{permission}</span></span>
+    </div>
+    <p class="endpoint-desc">Remove a named permission from the user.</p>
+    <div class="endpoint-body">
+      <div class="section-label">Path parameters</div>
+      <table class="param-table">
+        <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+        <tr><td class="param-name">id</td><td class="param-type">string</td><td class="param-desc">User ID</td></tr>
+        <tr><td class="param-name">permission</td><td class="param-type">string</td><td class="param-desc">Permission string to remove</td></tr>
+      </table>
+      <div class="section-label">Response — 200 OK</div>
+      <pre class="solo"><span class="cmt">// Remaining permissions</span>
+{ <span class="key">"permissions"</span>: [<span class="str">"read"</span>] }</pre>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- ================================================================ -->
+  <!-- PERSONS -->
+  <!-- ================================================================ -->
+  <h2 id="persons">Persons</h2>
+  <p>A <em>person</em> is a real-world individual with personal details and one or more employment contracts.</p>
+
+  <div class="section-label">Person object</div>
+  <table class="param-table" style="margin-bottom:24px">
+    <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+    <tr><td class="param-name">id</td><td class="param-type">string</td><td class="param-desc">Hex ID assigned on creation (read-only)</td></tr>
+    <tr><td class="param-name">first_name</td><td class="param-type">string</td><td class="param-desc">Given name</td></tr>
+    <tr><td class="param-name">last_name</td><td class="param-type">string</td><td class="param-desc">Family name</td></tr>
+    <tr><td class="param-name">birthday</td><td class="param-type">string</td><td class="param-desc">Date of birth in <code>YYYY-MM-DD</code> format</td></tr>
+    <tr><td class="param-name">address</td><td class="param-type">object</td><td class="param-desc">See Address object below</td></tr>
+    <tr><td class="param-name">phones</td><td class="param-type">string[]</td><td class="param-desc">List of phone numbers</td></tr>
+    <tr><td class="param-name">created_at</td><td class="param-type">datetime</td><td class="param-desc">ISO-8601 timestamp (read-only)</td></tr>
+    <tr><td class="param-name">updated_at</td><td class="param-type">datetime</td><td class="param-desc">ISO-8601 timestamp (read-only)</td></tr>
+  </table>
+
+  <div class="section-label">Address object</div>
+  <table class="param-table" style="margin-bottom:24px">
+    <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+    <tr><td class="param-name">street</td><td class="param-type">string</td><td class="param-desc">Street and house number</td></tr>
+    <tr><td class="param-name">city</td><td class="param-type">string</td><td class="param-desc">City</td></tr>
+    <tr><td class="param-name">state</td><td class="param-type">string</td><td class="param-desc">State / province</td></tr>
+    <tr><td class="param-name">zip</td><td class="param-type">string</td><td class="param-desc">Postal code</td></tr>
+    <tr><td class="param-name">country</td><td class="param-type">string</td><td class="param-desc">Country code or name</td></tr>
+  </table>
+
+  <!-- List persons -->
+  <div class="endpoint" id="persons-list">
+    <div class="endpoint-header">
+      <span class="method GET">GET</span>
+      <span class="path">/api/persons</span>
+    </div>
+    <p class="endpoint-desc">Return persons (paginated).</p>
+    <div class="endpoint-body">
+      <div class="section-label">Query parameters</div>
+      <table class="param-table">
+        <tr><th>Param</th><th>Default</th><th>Description</th></tr>
+        <tr><td class="param-name">page</td><td class="param-type">1</td><td class="param-desc">Page number (1-based)</td></tr>
+        <tr><td class="param-name">page_size</td><td class="param-type">config</td><td class="param-desc">Items per page (capped at persons max)</td></tr>
+        <tr><td class="param-name">format</td><td class="param-type">json</td><td class="param-desc"><code>xml</code> for XML output</td></tr>
+      </table>
+      <div class="section-label">Response — 200 OK</div>
+      <pre class="solo">{
+  <span class="key">"persons"</span>: [
+    {
+      <span class="key">"id"</span>:         <span class="str">"b2c3d4e5f6a7b8c9"</span>,
+      <span class="key">"first_name"</span>: <span class="str">"John"</span>,
+      <span class="key">"last_name"</span>:  <span class="str">"Doe"</span>,
+      <span class="key">"birthday"</span>:   <span class="str">"1985-03-12"</span>,
+      <span class="key">"address"</span>: {
+        <span class="key">"street"</span>:  <span class="str">"123 Main St"</span>,
+        <span class="key">"city"</span>:    <span class="str">"Springfield"</span>,
+        <span class="key">"state"</span>:   <span class="str">"IL"</span>,
+        <span class="key">"zip"</span>:     <span class="str">"62701"</span>,
+        <span class="key">"country"</span>: <span class="str">"US"</span>
+      },
+      <span class="key">"phones"</span>:     [<span class="str">"+1-555-0100"</span>],
+      <span class="key">"created_at"</span>: <span class="str">"2026-01-01T10:00:00Z"</span>,
+      <span class="key">"updated_at"</span>: <span class="str">"2026-01-01T10:00:00Z"</span>
+    }
+  ],
+  <span class="key">"pagination"</span>: {
+    <span class="key">"page"</span>: <span class="num">1</span>, <span class="key">"page_size"</span>: <span class="num">20</span>, <span class="key">"total"</span>: <span class="num">2</span>, <span class="key">"total_pages"</span>: <span class="num">1</span>
+  }
+}</pre>
+    </div>
+  </div>
+
+  <!-- Export persons -->
+  <div class="endpoint" id="persons-export">
+    <div class="endpoint-header">
+      <span class="method GET">GET</span>
+      <span class="path">/api/persons/export</span>
+    </div>
+    <p class="endpoint-desc">Download all persons as a CSV file. Address fields are flattened into individual columns. Multiple phone numbers are joined with <code>; </code>.</p>
+    <div class="endpoint-body">
+      <div class="section-label">Response — 200 OK · text/csv</div>
+      <pre class="solo">id,first_name,last_name,birthday,street,city,state,zip,country,phones,created_at,updated_at
+b2c3d4e5,John,Doe,1985-03-12,123 Main St,Springfield,IL,62701,US,+1-555-0100,2026-01-01T10:00:00Z,2026-01-01T10:00:00Z</pre>
+    </div>
+  </div>
+
+  <!-- Create person -->
+  <div class="endpoint" id="persons-create">
+    <div class="endpoint-header">
+      <span class="method POST">POST</span>
+      <span class="path">/api/persons</span>
+    </div>
+    <p class="endpoint-desc">Create a new person.</p>
+    <div class="endpoint-body">
+      <div class="section-label">Request body</div>
+      <table class="param-table">
+        <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+        <tr><td class="param-name">first_name</td><td class="param-type">string</td><td class="param-req">required</td><td class="param-desc">Given name</td></tr>
+        <tr><td class="param-name">last_name</td><td class="param-type">string</td><td class="param-req">required</td><td class="param-desc">Family name</td></tr>
+        <tr><td class="param-name">birthday</td><td class="param-type">string</td><td class="param-opt">optional</td><td class="param-desc"><code>YYYY-MM-DD</code></td></tr>
+        <tr><td class="param-name">address</td><td class="param-type">object</td><td class="param-opt">optional</td><td class="param-desc">Address object (all sub-fields optional)</td></tr>
+        <tr><td class="param-name">phones</td><td class="param-type">string[]</td><td class="param-opt">optional</td><td class="param-desc">List of phone numbers</td></tr>
+      </table>
+      <div class="section-label">Example body</div>
+      <pre class="solo">{
+  <span class="key">"first_name"</span>: <span class="str">"Jane"</span>,
+  <span class="key">"last_name"</span>:  <span class="str">"Doe"</span>,
+  <span class="key">"birthday"</span>:   <span class="str">"1990-07-24"</span>,
+  <span class="key">"address"</span>: {
+    <span class="key">"street"</span>:  <span class="str">"45 Oak Ave"</span>,
+    <span class="key">"city"</span>:    <span class="str">"Shelbyville"</span>,
+    <span class="key">"state"</span>:   <span class="str">"IL"</span>,
+    <span class="key">"zip"</span>:     <span class="str">"62565"</span>,
+    <span class="key">"country"</span>: <span class="str">"US"</span>
+  },
+  <span class="key">"phones"</span>: [<span class="str">"+1-555-0200"</span>]
+}</pre>
+      <div class="section-label" style="margin-top:10px">Response — 201 Created</div>
+      <pre class="solo"><span class="cmt">// Full person object with assigned id</span></pre>
+      <div class="section-label" style="margin-top:10px">Errors</div>
+      <table class="param-table">
+        <tr><th>Status</th><th>Condition</th></tr>
+        <tr><td class="param-type">400</td><td class="param-desc">Missing <code>first_name</code> or <code>last_name</code></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Get person -->
+  <div class="endpoint" id="persons-get">
+    <div class="endpoint-header">
+      <span class="method GET">GET</span>
+      <span class="path">/api/persons/<span class="param">{id}</span></span>
+    </div>
+    <p class="endpoint-desc">Fetch a single person by ID.</p>
+    <div class="endpoint-body">
+      <div class="section-label">Response — 200 OK · Errors</div>
+      <table class="param-table">
+        <tr><th>Status</th><th>Condition</th></tr>
+        <tr><td class="param-type">200</td><td class="param-desc">Single person object</td></tr>
+        <tr><td class="param-type">404</td><td class="param-desc">No person with that ID</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Update person -->
+  <div class="endpoint" id="persons-update">
+    <div class="endpoint-header">
+      <span class="method PUT">PUT</span>
+      <span class="path">/api/persons/<span class="param">{id}</span></span>
+    </div>
+    <p class="endpoint-desc">Patch a person's details. Only fields present in the body are updated. For <code>address</code>, only the sub-fields present are updated. Sending <code>phones</code> replaces the entire list.</p>
+    <div class="endpoint-body">
+      <div class="section-label">Request body (all optional)</div>
+      <table class="param-table">
+        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+        <tr><td class="param-name">first_name</td><td class="param-type">string</td><td class="param-desc">New given name</td></tr>
+        <tr><td class="param-name">last_name</td><td class="param-type">string</td><td class="param-desc">New family name</td></tr>
+        <tr><td class="param-name">birthday</td><td class="param-type">string</td><td class="param-desc">New date of birth <code>YYYY-MM-DD</code></td></tr>
+        <tr><td class="param-name">address</td><td class="param-type">object</td><td class="param-desc">Partial address — only provided sub-fields are changed</td></tr>
+        <tr><td class="param-name">phones</td><td class="param-type">string[]</td><td class="param-desc">Replaces the full phone list</td></tr>
+      </table>
+      <div class="section-label">Response — 200 OK</div>
+      <pre class="solo"><span class="cmt">// Updated person object</span></pre>
+    </div>
+  </div>
+
+  <!-- Delete person -->
+  <div class="endpoint" id="persons-delete">
+    <div class="endpoint-header">
+      <span class="method DELETE">DELETE</span>
+      <span class="path">/api/persons/<span class="param">{id}</span></span>
+    </div>
+    <p class="endpoint-desc">Permanently remove a person and <strong>all of their contracts</strong> (cascade delete).</p>
+    <div class="endpoint-body">
+      <div class="section-label">Response — 200 OK</div>
+      <pre class="solo">{ <span class="key">"message"</span>: <span class="str">"person deleted"</span> }</pre>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- ================================================================ -->
+  <!-- CONTRACTS -->
+  <!-- ================================================================ -->
+  <h2 id="contracts">Contracts</h2>
+  <p>Contracts are always scoped to a parent person. All contract endpoints include the person's <code>{id}</code> in the path.</p>
+
+  <div class="section-label">Contract object</div>
+  <table class="param-table" style="margin-bottom:24px">
+    <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+    <tr><td class="param-name">id</td><td class="param-type">string</td><td class="param-desc">Hex ID assigned on creation (read-only)</td></tr>
+    <tr><td class="param-name">person_id</td><td class="param-type">string</td><td class="param-desc">ID of the owning person (read-only)</td></tr>
+    <tr><td class="param-name">manager</td><td class="param-type">string</td><td class="param-desc">Reporting manager's name</td></tr>
+    <tr><td class="param-name">department</td><td class="param-type">string</td><td class="param-desc">Department name</td></tr>
+    <tr><td class="param-name">company</td><td class="param-type">string</td><td class="param-desc">Employer name</td></tr>
+    <tr><td class="param-name">title</td><td class="param-type">string</td><td class="param-desc">Job title</td></tr>
+    <tr><td class="param-name">start_date</td><td class="param-type">string</td><td class="param-desc">Contract start in <code>YYYY-MM-DD</code></td></tr>
+    <tr><td class="param-name">end_date</td><td class="param-type">string</td><td class="param-desc">Contract end in <code>YYYY-MM-DD</code>. Empty string means current / open-ended.</td></tr>
+    <tr><td class="param-name">created_at</td><td class="param-type">datetime</td><td class="param-desc">ISO-8601 timestamp (read-only)</td></tr>
+    <tr><td class="param-name">updated_at</td><td class="param-type">datetime</td><td class="param-desc">ISO-8601 timestamp (read-only)</td></tr>
+  </table>
+
+  <!-- All contracts -->
+  <div class="endpoint" id="contracts-all">
+    <div class="endpoint-header">
+      <span class="method GET">GET</span>
+      <span class="path">/api/contracts</span>
+    </div>
+    <p class="endpoint-desc">Return all contracts across every person in a single paginated list. Useful for searching or syncing without knowing person IDs upfront.</p>
+    <div class="endpoint-body">
+      <div class="section-label">Query parameters</div>
+      <table class="param-table">
+        <tr><th>Param</th><th>Default</th><th>Description</th></tr>
+        <tr><td class="param-name">page</td><td class="param-type">1</td><td class="param-desc">Page number (1-based)</td></tr>
+        <tr><td class="param-name">page_size</td><td class="param-type">config</td><td class="param-desc">Items per page (capped at persons max)</td></tr>
+        <tr><td class="param-name">format</td><td class="param-type">json</td><td class="param-desc"><code>xml</code> for XML output</td></tr>
+      </table>
+      <div class="section-label">Response — 200 OK</div>
+      <pre class="solo">{
+  <span class="key">"contracts"</span>: [
+    {
+      <span class="key">"id"</span>:          <span class="str">"c3d4e5f6a7b8c9d0"</span>,
+      <span class="key">"person_id"</span>:   <span class="str">"b2c3d4e5f6a7b8c9"</span>,
+      <span class="key">"manager"</span>:    <span class="str">"Jane Smith"</span>,
+      <span class="key">"department"</span>: <span class="str">"Engineering"</span>,
+      <span class="key">"company"</span>:    <span class="str">"Acme Corp"</span>,
+      <span class="key">"title"</span>:      <span class="str">"Senior Developer"</span>,
+      <span class="key">"start_date"</span>: <span class="str">"2024-01-15"</span>,
+      <span class="key">"end_date"</span>:   <span class="str">""</span>,
+      <span class="key">"created_at"</span>: <span class="str">"2026-01-01T10:00:00Z"</span>,
+      <span class="key">"updated_at"</span>: <span class="str">"2026-01-01T10:00:00Z"</span>
+    }
+  ],
+  <span class="key">"pagination"</span>: {
+    <span class="key">"page"</span>: <span class="num">1</span>, <span class="key">"page_size"</span>: <span class="num">20</span>, <span class="key">"total"</span>: <span class="num">42</span>, <span class="key">"total_pages"</span>: <span class="num">3</span>
+  }
+}</pre>
+    </div>
+  </div>
+
+  <!-- Export contracts -->
+  <div class="endpoint" id="contracts-export">
+    <div class="endpoint-header">
+      <span class="method GET">GET</span>
+      <span class="path">/api/contracts/export</span>
+    </div>
+    <p class="endpoint-desc">Download all contracts across every person as a single CSV file. The <code>person_id</code> column links each row back to its parent person.</p>
+    <div class="endpoint-body">
+      <div class="section-label">Response — 200 OK · text/csv</div>
+      <pre class="solo">id,person_id,manager,department,company,title,start_date,end_date,created_at,updated_at
+c3d4e5f6,b2c3d4e5,Jane Smith,Engineering,Acme Corp,Senior Developer,2024-01-15,,2026-01-01T10:00:00Z,2026-01-01T10:00:00Z</pre>
+      <p style="color:var(--muted);font-size:13px;margin-top:10px"><code>end_date</code> is empty for open-ended (current) contracts.</p>
+    </div>
+  </div>
+
+  <!-- List contracts by person -->
+  <div class="endpoint" id="contracts-list">
+    <div class="endpoint-header">
+      <span class="method GET">GET</span>
+      <span class="path">/api/persons/<span class="param">{id}</span>/contracts</span>
+    </div>
+    <p class="endpoint-desc">Return contracts for the given person (paginated).</p>
+    <div class="endpoint-body">
+      <div class="section-label">Response — 200 OK</div>
+      <pre class="solo">{
+  <span class="key">"contracts"</span>: [ <span class="cmt">/* contract objects */</span> ],
+  <span class="key">"pagination"</span>: { <span class="key">"page"</span>: <span class="num">1</span>, <span class="key">"page_size"</span>: <span class="num">20</span>, <span class="key">"total"</span>: <span class="num">3</span>, <span class="key">"total_pages"</span>: <span class="num">1</span> }
+}</pre>
+    </div>
+  </div>
+
+  <!-- Create contract -->
+  <div class="endpoint" id="contracts-create">
+    <div class="endpoint-header">
+      <span class="method POST">POST</span>
+      <span class="path">/api/persons/<span class="param">{id}</span>/contracts</span>
+    </div>
+    <p class="endpoint-desc">Add a new contract to the given person.</p>
+    <div class="endpoint-body">
+      <div class="section-label">Request body</div>
+      <table class="param-table">
+        <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+        <tr><td class="param-name">company</td><td class="param-type">string</td><td class="param-req">required</td><td class="param-desc">Employer name</td></tr>
+        <tr><td class="param-name">title</td><td class="param-type">string</td><td class="param-req">required</td><td class="param-desc">Job title</td></tr>
+        <tr><td class="param-name">start_date</td><td class="param-type">string</td><td class="param-req">required</td><td class="param-desc">Start date <code>YYYY-MM-DD</code></td></tr>
+        <tr><td class="param-name">manager</td><td class="param-type">string</td><td class="param-opt">optional</td><td class="param-desc">Manager name</td></tr>
+        <tr><td class="param-name">department</td><td class="param-type">string</td><td class="param-opt">optional</td><td class="param-desc">Department</td></tr>
+        <tr><td class="param-name">end_date</td><td class="param-type">string</td><td class="param-opt">optional</td><td class="param-desc">End date <code>YYYY-MM-DD</code>. Omit or send <code>""</code> for open-ended.</td></tr>
+      </table>
+      <div class="section-label">Response — 201 Created</div>
+      <pre class="solo"><span class="cmt">// Full contract object with assigned id and person_id</span></pre>
+      <div class="section-label" style="margin-top:10px">Errors</div>
+      <table class="param-table">
+        <tr><th>Status</th><th>Condition</th></tr>
+        <tr><td class="param-type">400</td><td class="param-desc">Missing <code>company</code>, <code>title</code>, or <code>start_date</code></td></tr>
+        <tr><td class="param-type">404</td><td class="param-desc">Person not found</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Get contract -->
+  <div class="endpoint" id="contracts-get">
+    <div class="endpoint-header">
+      <span class="method GET">GET</span>
+      <span class="path">/api/persons/<span class="param">{id}</span>/contracts/<span class="param">{contractId}</span></span>
+    </div>
+    <p class="endpoint-desc">Fetch a single contract. The contract must belong to the specified person.</p>
+    <div class="endpoint-body">
+      <div class="section-label">Response — 200 OK · Errors</div>
+      <table class="param-table">
+        <tr><th>Status</th><th>Condition</th></tr>
+        <tr><td class="param-type">200</td><td class="param-desc">Single contract object</td></tr>
+        <tr><td class="param-type">404</td><td class="param-desc">Person or contract not found, or contract belongs to a different person</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Update contract -->
+  <div class="endpoint" id="contracts-update">
+    <div class="endpoint-header">
+      <span class="method PUT">PUT</span>
+      <span class="path">/api/persons/<span class="param">{id}</span>/contracts/<span class="param">{contractId}</span></span>
+    </div>
+    <p class="endpoint-desc">Update contract fields. Non-empty fields are applied. <code>end_date</code> is always replaced — send <code>""</code> to clear it.</p>
+    <div class="endpoint-body">
+      <div class="section-label">Request body (all optional except end_date behaviour)</div>
+      <table class="param-table">
+        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+        <tr><td class="param-name">manager</td><td class="param-type">string</td><td class="param-desc">New manager</td></tr>
+        <tr><td class="param-name">department</td><td class="param-type">string</td><td class="param-desc">New department</td></tr>
+        <tr><td class="param-name">company</td><td class="param-type">string</td><td class="param-desc">New company</td></tr>
+        <tr><td class="param-name">title</td><td class="param-type">string</td><td class="param-desc">New title</td></tr>
+        <tr><td class="param-name">start_date</td><td class="param-type">string</td><td class="param-desc">New start date</td></tr>
+        <tr><td class="param-name">end_date</td><td class="param-type">string</td><td class="param-desc">New end date, or <code>""</code> to clear</td></tr>
+      </table>
+      <div class="section-label">Response — 200 OK</div>
+      <pre class="solo"><span class="cmt">// Updated contract object</span></pre>
+    </div>
+  </div>
+
+  <!-- Delete contract -->
+  <div class="endpoint" id="contracts-delete">
+    <div class="endpoint-header">
+      <span class="method DELETE">DELETE</span>
+      <span class="path">/api/persons/<span class="param">{id}</span>/contracts/<span class="param">{contractId}</span></span>
+    </div>
+    <p class="endpoint-desc">Remove a single contract without deleting the person.</p>
+    <div class="endpoint-body">
+      <div class="section-label">Response — 200 OK</div>
+      <pre class="solo">{ <span class="key">"message"</span>: <span class="str">"contract deleted"</span> }</pre>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- ================================================================ -->
+  <!-- SOAP -->
+  <!-- ================================================================ -->
+  <h2 id="soap-overview">SOAP</h2>
+  <p>The SOAP endpoint accepts standard SOAP 1.1 envelopes over HTTP POST. The same authentication rules apply.</p>
+
+  <div class="info-grid">
+    <div class="info-card"><div class="label">Endpoint</div><div class="value">POST /soap</div></div>
+    <div class="info-card"><div class="label">WSDL</div><div class="value">GET /soap</div></div>
+    <div class="info-card"><div class="label">Namespace</div><div class="value">http://testapi.local/</div></div>
+    <div class="info-card"><div class="label">Content-Type</div><div class="value">text/xml; charset=utf-8</div></div>
+  </div>
+
+  <div class="notice">
+    <strong>Operation dispatch:</strong> the server reads the root element name inside <code>&lt;soap:Body&gt;</code> (e.g. <code>&lt;tns:GetUser&gt;</code>) to determine the operation. Alternatively, set the <code>SOAPAction</code> header to <code>"http://testapi.local/OperationName"</code>.
+  </div>
+
+  <div class="section-label">Envelope skeleton</div>
+  <pre class="solo" style="margin-bottom:20px">&lt;?xml version=<span class="str">"1.0"</span> encoding=<span class="str">"utf-8"</span>?&gt;
+&lt;soap:Envelope xmlns:soap=<span class="str">"http://schemas.xmlsoap.org/soap/envelope/"</span>
+               xmlns:tns=<span class="str">"http://testapi.local/"</span>&gt;
+  &lt;soap:Body&gt;
+    &lt;tns:<span class="key">OperationName</span>&gt;
+      <span class="cmt">&lt;!-- operation elements --&gt;</span>
+    &lt;/tns:<span class="key">OperationName</span>&gt;
+  &lt;/soap:Body&gt;
+&lt;/soap:Envelope&gt;</pre>
+
+  <h2 id="soap-ops">SOAP Operations</h2>
+
+  <div class="section-label">User operations</div>
+  <table class="param-table" style="margin-bottom:20px">
+    <tr><th>Operation</th><th>Input elements</th><th>Description</th></tr>
+    <tr><td class="param-name">ListUsers</td><td class="param-desc"><em>none</em></td><td class="param-desc">Return all users</td></tr>
+    <tr><td class="param-name">GetUser</td><td class="param-desc"><code>&lt;Id&gt;</code></td><td class="param-desc">Fetch user by ID</td></tr>
+    <tr><td class="param-name">CreateUser</td><td class="param-desc"><code>&lt;Username&gt;</code> <code>&lt;Email&gt;</code> <code>&lt;FirstName&gt;</code> <code>&lt;LastName&gt;</code> <code>&lt;Enabled&gt;</code></td><td class="param-desc">Create user</td></tr>
+    <tr><td class="param-name">UpdateUser</td><td class="param-desc"><code>&lt;Id&gt;</code> + any of the create fields</td><td class="param-desc">Update user fields</td></tr>
+    <tr><td class="param-name">DeleteUser</td><td class="param-desc"><code>&lt;Id&gt;</code></td><td class="param-desc">Delete user</td></tr>
+    <tr><td class="param-name">EnableUser</td><td class="param-desc"><code>&lt;Id&gt;</code></td><td class="param-desc">Set enabled = true</td></tr>
+    <tr><td class="param-name">DisableUser</td><td class="param-desc"><code>&lt;Id&gt;</code></td><td class="param-desc">Set enabled = false</td></tr>
+    <tr><td class="param-name">GetPermissions</td><td class="param-desc"><code>&lt;Id&gt;</code></td><td class="param-desc">List permissions</td></tr>
+    <tr><td class="param-name">AddPermission</td><td class="param-desc"><code>&lt;Id&gt;</code> <code>&lt;Permission&gt;</code></td><td class="param-desc">Add permission</td></tr>
+    <tr><td class="param-name">RemovePermission</td><td class="param-desc"><code>&lt;Id&gt;</code> <code>&lt;Permission&gt;</code></td><td class="param-desc">Remove permission</td></tr>
+  </table>
+
+  <div class="section-label">Person operations</div>
+  <table class="param-table" style="margin-bottom:20px">
+    <tr><th>Operation</th><th>Input elements</th><th>Description</th></tr>
+    <tr><td class="param-name">ListPersons</td><td class="param-desc"><em>none</em></td><td class="param-desc">Return all persons</td></tr>
+    <tr><td class="param-name">GetPerson</td><td class="param-desc"><code>&lt;Id&gt;</code></td><td class="param-desc">Fetch person by ID</td></tr>
+    <tr><td class="param-name">CreatePerson</td><td class="param-desc"><code>&lt;FirstName&gt;</code> <code>&lt;LastName&gt;</code> <code>&lt;Birthday&gt;</code> <code>&lt;Street&gt;</code> <code>&lt;City&gt;</code> <code>&lt;State&gt;</code> <code>&lt;Zip&gt;</code> <code>&lt;Country&gt;</code> <code>&lt;Phone&gt;</code></td><td class="param-desc">Create person (single <code>Phone</code> element)</td></tr>
+    <tr><td class="param-name">UpdatePerson</td><td class="param-desc"><code>&lt;Id&gt;</code> + any create fields</td><td class="param-desc">Update person fields</td></tr>
+    <tr><td class="param-name">DeletePerson</td><td class="param-desc"><code>&lt;Id&gt;</code></td><td class="param-desc">Delete person and contracts</td></tr>
+  </table>
+
+  <div class="section-label">Contract operations</div>
+  <table class="param-table" style="margin-bottom:20px">
+    <tr><th>Operation</th><th>Input elements</th><th>Description</th></tr>
+    <tr><td class="param-name">ListContracts</td><td class="param-desc"><code>&lt;Id&gt;</code> (person ID)</td><td class="param-desc">List all contracts for a person</td></tr>
+    <tr><td class="param-name">GetContract</td><td class="param-desc"><code>&lt;Id&gt;</code> (person) <code>&lt;ContractId&gt;</code></td><td class="param-desc">Fetch a single contract</td></tr>
+    <tr><td class="param-name">CreateContract</td><td class="param-desc"><code>&lt;Id&gt;</code> (person) <code>&lt;Manager&gt;</code> <code>&lt;Department&gt;</code> <code>&lt;Company&gt;</code> <code>&lt;Title&gt;</code> <code>&lt;StartDate&gt;</code> <code>&lt;EndDate&gt;</code></td><td class="param-desc">Create contract</td></tr>
+    <tr><td class="param-name">UpdateContract</td><td class="param-desc"><code>&lt;Id&gt;</code> (person) <code>&lt;ContractId&gt;</code> + any create fields</td><td class="param-desc">Update contract</td></tr>
+    <tr><td class="param-name">DeleteContract</td><td class="param-desc"><code>&lt;Id&gt;</code> (person) <code>&lt;ContractId&gt;</code></td><td class="param-desc">Delete contract</td></tr>
+  </table>
+
+  <div class="section-label">Example — GetUser request &amp; response</div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab(this,'req-getuser')">Request</button>
+    <button class="tab-btn"        onclick="showTab(this,'res-getuser')">Response</button>
+  </div>
+  <div class="tab-content active" id="req-getuser">
+<pre>&lt;soap:Envelope xmlns:soap=<span class="str">"http://schemas.xmlsoap.org/soap/envelope/"</span>
+               xmlns:tns=<span class="str">"http://testapi.local/"</span>&gt;
+  &lt;soap:Body&gt;
+    &lt;tns:GetUser&gt;
+      &lt;Id&gt;<span class="str">a1b2c3d4e5f6a7b8</span>&lt;/Id&gt;
+    &lt;/tns:GetUser&gt;
+  &lt;/soap:Body&gt;
+&lt;/soap:Envelope&gt;</pre>
+  </div>
+  <div class="tab-content" id="res-getuser">
+<pre>&lt;soap:Envelope xmlns:soap=<span class="str">"http://schemas.xmlsoap.org/soap/envelope/"</span>&gt;
+  &lt;soap:Body&gt;
+    &lt;tns:GetUserResponse&gt;
+      &lt;Id&gt;<span class="str">a1b2c3d4e5f6a7b8</span>&lt;/Id&gt;
+      &lt;Username&gt;<span class="str">alice</span>&lt;/Username&gt;
+      &lt;Email&gt;<span class="str">alice@example.com</span>&lt;/Email&gt;
+      &lt;FirstName&gt;<span class="str">Alice</span>&lt;/FirstName&gt;
+      &lt;LastName&gt;<span class="str">Smith</span>&lt;/LastName&gt;
+      &lt;Enabled&gt;<span class="bool">true</span>&lt;/Enabled&gt;
+      &lt;Permissions&gt;
+        &lt;Permission&gt;<span class="str">read</span>&lt;/Permission&gt;
+        &lt;Permission&gt;<span class="str">write</span>&lt;/Permission&gt;
+      &lt;/Permissions&gt;
+    &lt;/tns:GetUserResponse&gt;
+  &lt;/soap:Body&gt;
+&lt;/soap:Envelope&gt;</pre>
+  </div>
+
+  <hr>
+
+  <!-- ================================================================ -->
+  <!-- OIDC SSO -->
+  <!-- ================================================================ -->
+  <h2 id="oidc-overview">OpenID Connect SSO</h2>
+  <p>When <code>oidc.discovery_url</code> is set in <code>config.json</code> the server registers five browser-facing routes that implement the <strong>Authorization Code Flow</strong>. The feature is completely opt-in — leave <code>discovery_url</code> empty and the routes do not exist.</p>
+
+  <div class="notice">
+    <strong>When is it useful?</strong> Use OIDC SSO to log in with your corporate identity provider (Hello ID, Azure AD, Okta, Google, …), inspect the claims it sends, verify your group-membership attribute mapping, and obtain an API Bearer token that carries your IdP permissions.
+  </div>
+
+  <div class="section-label">Configuration</div>
+  <table class="param-table" style="margin-bottom:18px">
+    <tr><th>Config key</th><th>Type</th><th>Description</th></tr>
+    <tr><td class="param-name">oidc.discovery_url</td><td class="param-type">string</td><td class="param-desc">IdP base URL. The server appends <code>/.well-known/openid-configuration</code> automatically.<br>Examples: <code>https://accounts.google.com</code> · <code>https://login.microsoftonline.com/{tenant}/v2.0</code></td></tr>
+    <tr><td class="param-name">oidc.client_id</td><td class="param-type">string</td><td class="param-desc">App / client ID registered at the IdP.</td></tr>
+    <tr><td class="param-name">oidc.client_secret</td><td class="param-type">string</td><td class="param-desc">App secret registered at the IdP.</td></tr>
+    <tr><td class="param-name">oidc.redirect_url</td><td class="param-type">string</td><td class="param-desc">Must match the callback URL registered at the IdP. Example: <code>http://localhost:8080/oidc/callback</code></td></tr>
+    <tr><td class="param-name">oidc.scopes</td><td class="param-type">string[]</td><td class="param-desc">Scopes to request. Defaults to <code>["openid","profile","email"]</code>. Add provider-specific scopes to receive group claims (e.g. <code>"groups"</code> for Okta/Azure).</td></tr>
+    <tr><td class="param-name">oidc.permissions_claim</td><td class="param-type">string</td><td class="param-desc">Name of the ID-token claim that carries group memberships / roles. The value may be a JSON array of strings or a comma-separated string.<br>Common values: <code>memberOf</code> (Hello ID / Active Directory) · <code>groups</code> (Okta, Azure AD) · <code>roles</code></td></tr>
+  </table>
+
+  <div class="section-label">Hello ID — group membership attribute</div>
+  <p>In Hello ID, enable <em>Send Group Membership Attribute</em> on the application and set the attribute name to match your <code>permissions_claim</code> value (e.g. <code>memberOf</code>). The server will read that claim from the ID token and display the memberships on the <code>/oidc/me</code> page.</p>
+
+  <div class="section-label">Flow overview</div>
+  <pre class="solo"><span class="cmt">Browser                   go_testapi              Identity Provider</span>
+  │                           │                           │
+  │  GET /oidc/login          │                           │
+  │──────────────────────────&gt;│                           │
+  │                           │  redirect to IdP          │
+  │&lt;──────────────────────────│  (authorization URL)      │
+  │                           │                           │
+  │  user logs in ────────────────────────────────────────&gt;│
+  │  IdP redirects back ──────────────────────────────────&lt;│
+  │                           │                           │
+  │  GET /oidc/callback?code= │                           │
+  │──────────────────────────&gt;│  exchange code for tokens │
+  │                           │──────────────────────────&gt;│
+  │                           │&lt;──────────────────────────│
+  │                           │  verify ID token          │
+  │                           │  extract permissions claim│
+  │  redirect to /oidc/me     │  store session cookie     │
+  │&lt;──────────────────────────│                           │</pre>
+
+  <!-- Login -->
+  <div class="endpoint" id="oidc-login">
+    <div class="endpoint-header">
+      <span class="method GET">GET</span>
+      <span class="path">/oidc/login</span>
+    </div>
+    <p class="endpoint-desc">Redirects the browser to the IdP's authorization endpoint to start the SSO flow. No parameters required.</p>
+    <div class="endpoint-body">
+      <div class="section-label">Response</div>
+      <table class="param-table">
+        <tr><th>Status</th><th>Condition</th></tr>
+        <tr><td class="param-type">302</td><td class="param-desc">Redirect to IdP authorization URL. A short-lived <code>oidc_state</code> cookie is set for CSRF protection.</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Callback -->
+  <div class="endpoint" id="oidc-callback">
+    <div class="endpoint-header">
+      <span class="method GET">GET</span>
+      <span class="path">/oidc/callback</span>
+    </div>
+    <p class="endpoint-desc">IdP redirect target. Exchanges the authorization code for tokens, verifies the ID token, extracts the permissions claim, and creates a server-side session.</p>
+    <div class="endpoint-body">
+      <div class="section-label">Query parameters (set by the IdP)</div>
+      <table class="param-table">
+        <tr><th>Param</th><th>Description</th></tr>
+        <tr><td class="param-name">code</td><td class="param-desc">Authorization code from the IdP</td></tr>
+        <tr><td class="param-name">state</td><td class="param-desc">Anti-CSRF nonce — must match the <code>oidc_state</code> cookie</td></tr>
+      </table>
+      <div class="section-label">Response</div>
+      <table class="param-table">
+        <tr><th>Status</th><th>Condition</th></tr>
+        <tr><td class="param-type">302</td><td class="param-desc">Redirect to <code>/oidc/me</code> on success. Sets an <code>oidc_session</code> cookie (HttpOnly).</td></tr>
+        <tr><td class="param-type">400</td><td class="param-desc">State mismatch (CSRF) or expired state</td></tr>
+        <tr><td class="param-type">500</td><td class="param-desc">Token exchange or ID-token verification failure</td></tr>
+      </table>
+      <div class="notice" style="margin-top:12px">
+        <strong>Register this URL</strong> as the allowed redirect / callback URI at your IdP. The exact value must match <code>oidc.redirect_url</code> in config.
+      </div>
+    </div>
+  </div>
+
+  <!-- Me -->
+  <div class="endpoint" id="oidc-me">
+    <div class="endpoint-header">
+      <span class="method GET">GET</span>
+      <span class="path">/oidc/me</span>
+    </div>
+    <p class="endpoint-desc">HTML profile page for the currently logged-in SSO user. Requires an active <code>oidc_session</code> cookie; redirects to <code>/oidc/login</code> if not present.</p>
+    <div class="endpoint-body">
+      <div class="section-label">Page sections</div>
+      <table class="param-table">
+        <tr><th>Section</th><th>Description</th></tr>
+        <tr><td class="param-name">Profile</td><td class="param-desc">Avatar (if <code>picture</code> claim present), display name, and email</td></tr>
+        <tr><td class="param-name">Permissions</td><td class="param-desc">All values from the configured <code>permissions_claim</code> shown as tags. If the claim is absent a hint is displayed explaining how to configure the IdP attribute mapping.</td></tr>
+        <tr><td class="param-name">ID token claims</td><td class="param-desc">Full claim set from the ID token as a key/value table — useful for debugging attribute mapping</td></tr>
+        <tr><td class="param-name">API Bearer token</td><td class="param-desc">Button to call <code>/oidc/token</code> and display the resulting token alongside the effective permissions</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Token -->
+  <div class="endpoint" id="oidc-token">
+    <div class="endpoint-header">
+      <span class="method GET">GET</span>
+      <span class="path">/oidc/token</span>
+    </div>
+    <p class="endpoint-desc">Issues a standard API Bearer token for the logged-in OIDC user. The token is stored in the same token store used by <code>POST /oauth/token</code> and is accepted by <code>Authorization: Bearer …</code> on all <code>/api/*</code> endpoints. The response additionally carries the <code>permissions</code> list extracted from the IdP claim.</p>
+    <div class="endpoint-body">
+      <div class="section-label">Response — 200 OK</div>
+      <pre class="solo">{
+  <span class="key">"access_token"</span>: <span class="str">"a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"</span>,
+  <span class="key">"token_type"</span>:   <span class="str">"Bearer"</span>,
+  <span class="key">"expires_in"</span>:   <span class="num">3600</span>,
+  <span class="key">"permissions"</span>: [<span class="str">"CN=HR-Admins,OU=Groups,DC=corp,DC=local"</span>, <span class="str">"CN=IT-Staff,OU=Groups,DC=corp,DC=local"</span>]
+}</pre>
+      <div class="section-label" style="margin-top:10px">Errors</div>
+      <table class="param-table">
+        <tr><th>Status</th><th>Condition</th></tr>
+        <tr><td class="param-type">401</td><td class="param-desc">No active OIDC session — visit <code>/oidc/login</code> first</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Logout -->
+  <div class="endpoint" id="oidc-logout">
+    <div class="endpoint-header">
+      <span class="method GET">GET</span>
+      <span class="path">/oidc/logout</span>
+    </div>
+    <p class="endpoint-desc">Clears the server-side session and the <code>oidc_session</code> cookie, then redirects to <code>/</code>. Does not perform IdP-side logout (RP-initiated logout is not implemented).</p>
+    <div class="endpoint-body">
+      <div class="section-label">Response</div>
+      <table class="param-table">
+        <tr><th>Status</th><th>Condition</th></tr>
+        <tr><td class="param-type">302</td><td class="param-desc">Redirect to <code>/</code></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- ERRORS -->
+  <h2 id="errors">Error Responses</h2>
+  <p>All REST errors return a consistent JSON (or XML) body with a <code>message</code> field.</p>
+
+  <table class="param-table" style="margin-bottom:20px">
+    <tr><th>HTTP Status</th><th>Meaning</th></tr>
+    <tr><td class="param-type">400 Bad Request</td><td class="param-desc">Malformed body or missing required field</td></tr>
+    <tr><td class="param-type">401 Unauthorized</td><td class="param-desc">Missing or invalid credentials / expired token</td></tr>
+    <tr><td class="param-type">404 Not Found</td><td class="param-desc">Resource does not exist</td></tr>
+    <tr><td class="param-type">409 Conflict</td><td class="param-desc">Duplicate username on create or update</td></tr>
+    <tr><td class="param-type">500 Internal Server Error</td><td class="param-desc">Unexpected server error</td></tr>
+  </table>
+
+  <div class="section-label">JSON error body</div>
+  <pre class="solo">{ <span class="key">"message"</span>: <span class="str">"user not found"</span> }</pre>
+
+  <div class="section-label" style="margin-top:14px">SOAP fault body</div>
+  <pre class="solo">&lt;soap:Fault&gt;
+  &lt;faultcode&gt;<span class="str">soap:Client</span>&lt;/faultcode&gt;
+  &lt;faultstring&gt;<span class="str">user not found</span>&lt;/faultstring&gt;
+&lt;/soap:Fault&gt;</pre>
+
+</main>
+
+<script>
+function showTab(btn, id) {
+  const group = btn.closest('.endpoint-body, main');
+  btn.parentElement.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // find sibling tab-content elements
+  const contents = btn.closest('main').querySelectorAll('#' + id.replace(/-(req|res)-/, '-') + ', [id^="req-"], [id^="res-"]');
+  // simpler: toggle by id
+  document.querySelectorAll('.tab-content').forEach(el => {
+    if (el.id === id) el.classList.add('active');
+    else if (el.id === id.replace('req-','res-') || el.id === id.replace('res-','req-'))
+      el.classList.remove('active');
+  });
+}
+</script>
+</body>
+</html>
