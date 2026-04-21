@@ -19,7 +19,7 @@
       "output": {
         "merge_first_contract": "contract",
         "list_key":   "data",
-        "list_extra": { "success": true },
+        "list_extra": { "success": true, "offset": 0, "limit": 200, "metadata": { "current_page": 0, "total_pages": 1 } },
         "item_key":   "attributes",
         "item_extra": { "type": "Employee" },
         "attribute_style": "labeled",
@@ -27,6 +27,7 @@
           "id":                     "id",
           "first_name":             "first_name",
           "last_name":              "last_name",
+          "email":                  "email",
           "birthday":               "birthday",
           "address.street":         "street",
           "address.city":           "city",
@@ -43,6 +44,10 @@
         "field_formats": {
           "hire_date":           "yyyy-MM-dd'T'HH:mm:ssZ",
           "contract_end_date":   "yyyy-MM-dd'T'HH:mm:ssZ"
+        },
+        "value_objects": {
+          "department": { "type": "Department", "attributes": { "id": 0, "name": "$" } },
+          "supervisor": { "type": "Employee", "attributes": { "id": { "label": "ID", "value": "$", "type": "integer", "universal_id": "id" } } }
         }
       }
     },
@@ -60,6 +65,7 @@
           "id":                     "id",
           "first_name":             "first_name",
           "last_name":              "last_name",
+          "email":                  "email",
           "birthday":               "birthday",
           "address.street":         "street",
           "address.city":           "city",
@@ -76,6 +82,10 @@
         "field_formats": {
           "hire_date":           "yyyy-MM-dd'T'HH:mm:ssZ",
           "contract_end_date":   "yyyy-MM-dd'T'HH:mm:ssZ"
+        },
+        "value_objects": {
+          "department": { "type": "Department", "attributes": { "id": 0, "name": "$" } },
+          "supervisor": { "type": "Employee", "attributes": { "id": { "label": "ID", "value": "$", "type": "integer", "universal_id": "id" } } }
         }
       }
     },
@@ -90,12 +100,20 @@
         "field_map": {
           "first_name":      "first_name",
           "last_name":       "last_name",
+          "email":           "email",
           "birthday":        "birthday",
           "address.street":  "street",
           "address.city":    "city",
           "address.state":   "state",
           "address.zip":     "zip",
-          "address.country": "country"
+          "address.country": "country",
+          "department":      "department",
+          "position":        "position",
+          "supervisor":      "supervisor"
+        },
+        "value_paths": {
+          "department": "attributes.name",
+          "supervisor": "attributes.id.value"
         }
       },
       "output": {
@@ -107,6 +125,7 @@
           "id":                     "id",
           "first_name":             "first_name",
           "last_name":              "last_name",
+          "email":                  "email",
           "birthday":               "birthday",
           "address.street":         "street",
           "address.city":           "city",
@@ -123,6 +142,10 @@
         "field_formats": {
           "hire_date":           "yyyy-MM-dd'T'HH:mm:ssZ",
           "contract_end_date":   "yyyy-MM-dd'T'HH:mm:ssZ"
+        },
+        "value_objects": {
+          "department": { "type": "Department", "attributes": { "id": 0, "name": "$" } },
+          "supervisor": { "type": "Employee", "attributes": { "id": { "label": "ID", "value": "$", "type": "integer", "universal_id": "id" } } }
         }
       }
     },
@@ -137,12 +160,20 @@
         "field_map": {
           "first_name":      "first_name",
           "last_name":       "last_name",
+          "email":           "email",
           "birthday":        "birthday",
           "address.street":  "street",
           "address.city":    "city",
           "address.state":   "state",
           "address.zip":     "zip",
-          "address.country": "country"
+          "address.country": "country",
+          "department":      "department",
+          "position":        "position",
+          "supervisor":      "supervisor"
+        },
+        "value_paths": {
+          "department": "attributes.name",
+          "supervisor": "attributes.id.value"
         }
       },
       "output": {
@@ -154,6 +185,7 @@
           "id":                     "id",
           "first_name":             "first_name",
           "last_name":              "last_name",
+          "email":                  "email",
           "birthday":               "birthday",
           "address.street":         "street",
           "address.city":           "city",
@@ -170,6 +202,10 @@
         "field_formats": {
           "hire_date":           "yyyy-MM-dd'T'HH:mm:ssZ",
           "contract_end_date":   "yyyy-MM-dd'T'HH:mm:ssZ"
+        },
+        "value_objects": {
+          "department": { "type": "Department", "attributes": { "id": 0, "name": "$" } },
+          "supervisor": { "type": "Employee", "attributes": { "id": { "label": "ID", "value": "$", "type": "integer", "universal_id": "id" } } }
         }
       }
     },
@@ -187,7 +223,7 @@
       "limiter": "person",
       "output": {
         "list_key":   "data",
-        "list_extra": { "success": true },
+        "list_extra": { "success": true, "offset": 0, "limit": 200, "metadata": { "current_page": 0, "total_pages": 1 } },
         "item_key":   "attributes",
         "item_extra": { "type": "Contract" },
         "attribute_style": "labeled",
@@ -204,6 +240,10 @@
         "field_formats": {
           "start_date": "yyyy-MM-dd'T'HH:mm:ssZ",
           "end_date":   "yyyy-MM-dd'T'HH:mm:ssZ"
+        },
+        "value_objects": {
+          "department": { "type": "Department", "attributes": { "id": 0, "name": "$" } },
+          "supervisor": { "type": "Employee", "attributes": { "id": { "label": "ID", "value": "$", "type": "integer", "universal_id": "id" } } }
         }
       }
     },
@@ -229,6 +269,10 @@
         "field_formats": {
           "start_date": "yyyy-MM-dd'T'HH:mm:ssZ",
           "end_date":   "yyyy-MM-dd'T'HH:mm:ssZ"
+        },
+        "value_objects": {
+          "department": { "type": "Department", "attributes": { "id": 0, "name": "$" } },
+          "supervisor": { "type": "Employee", "attributes": { "id": { "label": "ID", "value": "$", "type": "integer", "universal_id": "id" } } }
         }
       }
     }

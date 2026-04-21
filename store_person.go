@@ -21,6 +21,7 @@ type Person struct {
 	ID         string         `json:"id"                   xml:"Id"`
 	FirstName  string         `json:"first_name"           xml:"FirstName"`
 	LastName   string         `json:"last_name"            xml:"LastName"`
+	Email      string         `json:"email"                xml:"Email"`
 	Birthday   string         `json:"birthday"             xml:"Birthday"` // YYYY-MM-DD
 	Address    Address        `json:"address"              xml:"Address"`
 	Phones     []string       `json:"phones"               xml:"Phones>Phone,omitempty"`
@@ -144,7 +145,7 @@ func (s *PersonStore) SeedPersons() {
 	}{
 		{
 			Person{
-				FirstName: "John", LastName: "Doe", Birthday: "1985-03-12",
+				FirstName: "John", LastName: "Doe", Email: "john.doe@example.com", Birthday: "1985-03-12",
 				Address: Address{Street: "123 Main St", City: "Springfield", State: "IL", Zip: "62701", Country: "US"},
 				Phones:  []string{"+1-555-0100", "+1-555-0101"},
 			},
@@ -154,7 +155,7 @@ func (s *PersonStore) SeedPersons() {
 		},
 		{
 			Person{
-				FirstName: "Mary", LastName: "Johnson", Birthday: "1990-07-24",
+				FirstName: "Mary", LastName: "Johnson", Email: "mary.johnson@example.com", Birthday: "1990-07-24",
 				Address: Address{Street: "45 Oak Ave", City: "Shelbyville", State: "IL", Zip: "62565", Country: "US"},
 				Phones:  []string{"+1-555-0200"},
 			},
@@ -264,6 +265,9 @@ func (s *PersonStore) UpdatePerson(id string, patch Person) (Person, error) {
 	}
 	if patch.LastName != "" {
 		p.LastName = patch.LastName
+	}
+	if patch.Email != "" {
+		p.Email = patch.Email
 	}
 	if patch.Birthday != "" {
 		p.Birthday = patch.Birthday

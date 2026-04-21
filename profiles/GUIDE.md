@@ -179,6 +179,7 @@ For **contract** operations the engine resolves IDs as follows:
 | `field_map` | `{ "internal_field": "ExternalBodyKey" }` — which external key maps to which internal field |
 | `item_key` | If the body wraps fields under a key (e.g. `"attributes"`), unwrap it first |
 | `attribute_style` | `"labeled"` — body values are `{"label":"...","value":...,"type":"..."}` objects; extract `value` automatically |
+| `value_paths` | `{ "ExternalKey": "dot.path" }` — for labeled fields where `value` is itself an object, navigate further to extract the actual scalar. Example: `{ "department": "attributes.name" }` extracts `value.attributes.name`. |
 
 **Plain body** (HelloID `PUT /users/:id`):
 ```json
@@ -189,6 +190,20 @@ For **contract** operations the engine resolves IDs as follows:
   "field_map": { "username": "userName", "email": "emailAddress", "enabled": "isEnabled" }
 }
 ```
+
+**Nested body with object-valued labeled fields** (Personio `PUT /employees/:id`, `department` is a nested object):
+```json
+{ "attributes": { "department": { "label": "Department", "value": { "type": "Department", "attributes": { "id": 1, "name": "Engineering" } }, "type": "standard" } } }
+```
+```json
+"input": {
+  "item_key": "attributes",
+  "attribute_style": "labeled",
+  "field_map":   { "department": "department" },
+  "value_paths": { "department": "attributes.name" }
+}
+```
+`value_paths` navigates `value → attributes.name` to extract `"Engineering"` instead of the whole Department object.
 
 **Nested body** (Personio `POST /employees`, fields inside `"attributes"`):
 ```json
@@ -323,6 +338,29 @@ When `merge_first_contract` is set (e.g. `"contract"`), the first contract's `at
 | `merge_all_contracts` | String field name. When non-empty, all contracts are placed as an array under this key. Map the key directly in `field_map` to include the array. Example: `"contracts"` |
 
 Both flags can be combined on the same route.
+
+**Labeled value wrapping** (`attribute_style: "labeled"` only):
+
+| Field | Description |
+|---|---|
+| `value_objects` | `{ "ExternalKey": <template> }` — wraps the scalar value inside a nested object before placing it in the labeled `"value"` field. The sentinel string `"$"` anywhere in the template is replaced with the actual value. |
+
+Example — Personio department format:
+```json
+"value_objects": {
+  "department": { "type": "Department", "attributes": { "id": 0, "name": "$" } },
+  "supervisor": { "type": "Employee", "attributes": { "id": { "label": "ID", "value": "$", "type": "integer", "universal_id": "id" } } }
+}
+```
+
+This turns a plain `"Engineering"` string into:
+```json
+{
+  "label": "Department",
+  "value": { "type": "Department", "attributes": { "id": 0, "name": "Engineering" } },
+  "type": "standard"
+}
+```
 
 **Date formatting:**
 

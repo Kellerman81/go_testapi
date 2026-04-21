@@ -14,6 +14,11 @@ type InputMapping struct {
 	FieldMap       map[string]string `json:"field_map"`       // external key → internal key
 	ItemKey        string            `json:"item_key"`        // unwrap body from this key first
 	AttributeStyle string            `json:"attribute_style"` // "" or "labeled"
+	// ValuePaths lets you navigate deeper into a labeled field's value when the value
+	// itself is an object (e.g. Personio department / supervisor).
+	// Keys are external field names; values are dot-paths into the labeled value.
+	// Example: { "department": "attributes.name" } extracts value.attributes.name.
+	ValuePaths map[string]string `json:"value_paths"`
 }
 
 // OutputMapping defines how an internal struct is shaped into an external response.
@@ -34,6 +39,12 @@ type OutputMapping struct {
 	NameField string `json:"name_field"`
 
 	AttributeStyle string `json:"attribute_style"` // "" or "labeled"
+
+	// ValueObjects maps external field names to a template object used as the labeled
+	// "value" when attribute_style is "labeled". The special string "$" anywhere in the
+	// template is replaced with the actual field value.
+	// Example: { "department": { "type": "Department", "attributes": { "id": 0, "name": "$" } } }
+	ValueObjects map[string]any `json:"value_objects"`
 
 	// FieldFormats maps external field names to a date format pattern applied on output.
 	// Tokens: yyyy MM dd HH mm ss Z (timezone as ±HH:mm)
@@ -252,6 +263,32 @@ func applyFieldFormat(val any, pattern string) any {
 	}
 }
 
+// applyValueTemplate recursively replaces the sentinel string "$" in a template
+// with val, enabling value_objects to construct nested Personio-style wrappers.
+func applyValueTemplate(tmpl, val any) any {
+	switch t := tmpl.(type) {
+	case string:
+		if t == "$" {
+			return val
+		}
+		return t
+	case map[string]any:
+		result := make(map[string]any, len(t))
+		for k, v := range t {
+			result[k] = applyValueTemplate(v, val)
+		}
+		return result
+	case []any:
+		result := make([]any, len(t))
+		for i, v := range t {
+			result[i] = applyValueTemplate(v, val)
+		}
+		return result
+	default:
+		return tmpl
+	}
+}
+
 // forwardTransform maps an internal struct to an OutputMapping-shaped response item.
 func forwardTransform(internal any, out *OutputMapping) (map[string]any, error) {
 	src, err := structToMap(internal)
@@ -269,9 +306,15 @@ func forwardTransform(internal any, out *OutputMapping) (map[string]any, error) 
 			val = applyFieldFormat(val, fmt)
 		}
 		if out.AttributeStyle == "labeled" {
+			wrappedVal := val
+			if out.ValueObjects != nil {
+				if tmpl, ok := out.ValueObjects[externalKey]; ok {
+					wrappedVal = applyValueTemplate(tmpl, val)
+				}
+			}
 			fields[externalKey] = map[string]any{
 				"label": attributeLabel(externalKey),
-				"value": val,
+				"value": wrappedVal,
 				"type":  attributeType(val),
 			}
 		} else {
@@ -319,6 +362,16 @@ func reverseTransform(body map[string]any, in *InputMapping, dest any) (map[stri
 				val = wrapper["value"]
 			} else {
 				val = raw
+			}
+			// If the value is still an object, follow the configured sub-path.
+			if in != nil && in.ValuePaths != nil {
+				if vpath, ok := in.ValuePaths[externalKey]; ok && vpath != "" {
+					if valMap, ok := val.(map[string]any); ok {
+						if deeper, ok := getNestedValue(valMap, vpath); ok {
+							val = deeper
+						}
+					}
+				}
 			}
 		} else {
 			val = raw
