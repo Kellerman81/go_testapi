@@ -41,6 +41,7 @@ jobs:
           mkdir -p dist/linux
           cp go_testapi_linux_amd64 dist/linux/go_testapi
           cp config.template.json docs.html examples.ps1 dist/linux/
+          cp -r profiles dist/linux/profiles
           cd dist && zip -r go_testapi_linux_amd64.zip linux/
 
       - name: Package Windows
@@ -48,6 +49,7 @@ jobs:
           mkdir -p dist/windows
           cp go_testapi_windows_amd64.exe dist/windows/go_testapi.exe
           cp config.template.json docs.html examples.ps1 dist/windows/
+          cp -r profiles dist/windows/profiles
           cd dist && zip -r go_testapi_windows_amd64.zip windows/
 
       - name: Create Release
