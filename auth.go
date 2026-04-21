@@ -109,8 +109,8 @@ func (a *AuthService) checkAuth(r *http.Request) bool {
 
 func extractBearer(r *http.Request) string {
 	h := r.Header.Get("Authorization")
-	if strings.HasPrefix(h, "Bearer ") {
-		return strings.TrimPrefix(h, "Bearer ")
+	if after, ok := strings.CutPrefix(h, "Bearer "); ok {
+		return after
 	}
 	return ""
 }
@@ -128,7 +128,7 @@ func (a *AuthService) IssueToken() (token string, expiry time.Time) {
 
 // ---- low-level helpers (used by soap.go which writes raw http) ----
 
-func writeJSON(w http.ResponseWriter, status int, v interface{}) {
+func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(v)

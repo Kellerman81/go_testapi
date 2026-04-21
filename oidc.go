@@ -21,7 +21,7 @@ import (
 // ============================================================
 
 type oidcSession struct {
-	Claims      map[string]interface{}
+	Claims      map[string]any
 	Permissions []string  // extracted from PermissionsClaim
 	ExpiresAt   time.Time // zero = never checked
 }
@@ -123,7 +123,7 @@ func (o *OIDCService) CallbackHandler(c *gin.Context) {
 		return
 	}
 
-	var claims map[string]interface{}
+	var claims map[string]any
 	if o.cfg.SkipSignatureVerification {
 		// IdP uses HS256 (symmetric) — go-oidc cannot verify that algorithm.
 		// Parse the payload manually and validate iss/aud/exp ourselves.
@@ -178,7 +178,7 @@ func (o *OIDCService) MeHandler(c *gin.Context) {
 		return
 	}
 	data := struct {
-		Claims           map[string]interface{}
+		Claims           map[string]any
 		Permissions      []string
 		PermissionsClaim string
 	}{
@@ -187,7 +187,7 @@ func (o *OIDCService) MeHandler(c *gin.Context) {
 		PermissionsClaim: o.cfg.PermissionsClaim,
 	}
 	tmpl := template.Must(template.New("me").Funcs(template.FuncMap{
-		"stringify": func(v interface{}) string { return fmt.Sprintf("%v", v) },
+		"stringify": func(v any) string { return fmt.Sprintf("%v", v) },
 	}).Parse(mePage))
 	c.Header("Content-Type", "text/html; charset=utf-8")
 	_ = tmpl.Execute(c.Writer, data)
@@ -220,7 +220,7 @@ func (o *OIDCService) sessionFromCookie(c *gin.Context) *oidcSession {
 // claimAsStrings extracts a claim as a []string. Handles:
 //   - []interface{} of strings — standard OIDC groups claim
 //   - single string — comma-separated or space-separated list
-func claimAsStrings(claims map[string]interface{}, key string) []string {
+func claimAsStrings(claims map[string]any, key string) []string {
 	if key == "" {
 		return nil
 	}
@@ -229,7 +229,7 @@ func claimAsStrings(claims map[string]interface{}, key string) []string {
 		return nil
 	}
 	switch v := val.(type) {
-	case []interface{}:
+	case []any:
 		out := make([]string, 0, len(v))
 		for _, item := range v {
 			if s, ok := item.(string); ok && s != "" {
@@ -246,7 +246,7 @@ func claimAsStrings(claims map[string]interface{}, key string) []string {
 			sep = " "
 		}
 		var out []string
-		for _, p := range strings.Split(v, sep) {
+		for p := range strings.SplitSeq(v, sep) {
 			if s := strings.TrimSpace(p); s != "" {
 				out = append(out, s)
 			}
@@ -259,7 +259,7 @@ func claimAsStrings(claims map[string]interface{}, key string) []string {
 // parseJWTPayload decodes a JWT payload without verifying the signature.
 // Used for HS256-signed tokens (e.g. Hello ID) where go-oidc cannot verify
 // the symmetric key. Validates issuer, audience, and expiry manually.
-func parseJWTPayload(rawToken, issuer, clientID string) (map[string]interface{}, error) {
+func parseJWTPayload(rawToken, issuer, clientID string) (map[string]any, error) {
 	parts := strings.Split(rawToken, ".")
 	if len(parts) != 3 {
 		return nil, fmt.Errorf("malformed JWT: expected 3 parts, got %d", len(parts))
@@ -268,7 +268,7 @@ func parseJWTPayload(rawToken, issuer, clientID string) (map[string]interface{},
 	if err != nil {
 		return nil, fmt.Errorf("JWT payload decode: %w", err)
 	}
-	var claims map[string]interface{}
+	var claims map[string]any
 	if err := json.Unmarshal(payload, &claims); err != nil {
 		return nil, fmt.Errorf("JWT claims unmarshal: %w", err)
 	}
@@ -283,7 +283,7 @@ func parseJWTPayload(rawToken, issuer, clientID string) (map[string]interface{},
 	switch v := claims["aud"].(type) {
 	case string:
 		audOK = v == clientID
-	case []interface{}:
+	case []any:
 		for _, a := range v {
 			if s, ok := a.(string); ok && s == clientID {
 				audOK = true

@@ -196,7 +196,7 @@ type apiMessage struct {
 	Message string `json:"message" xml:"Message"`
 }
 
-func respond(c *gin.Context, status int, data interface{}) {
+func respond(c *gin.Context, status int, data any) {
 	if wantsXML(c) {
 		c.XML(status, data)
 		return
@@ -230,7 +230,7 @@ func wantsXML(c *gin.Context) bool {
 }
 
 // decodeBody decodes JSON or XML depending on Content-Type.
-func decodeBody(c *gin.Context, v interface{}) error {
+func decodeBody(c *gin.Context, v any) error {
 	ct := c.ContentType()
 	if strings.Contains(ct, "xml") {
 		return xml.NewDecoder(c.Request.Body).Decode(v)

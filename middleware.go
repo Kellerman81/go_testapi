@@ -24,10 +24,7 @@ func NewResourceLimiter(cfg RateLimitGroupConfig) *ResourceLimiter {
 	if cfg.RequestsPer10Seconds <= 0 {
 		return &ResourceLimiter{}
 	}
-	burst := cfg.Burst
-	if burst < 1 {
-		burst = 1
-	}
+	burst := max(cfg.Burst, 1)
 	// Convert to per-second rate for the token bucket.
 	ratePerSec := cfg.RequestsPer10Seconds / 10.0
 	return &ResourceLimiter{
@@ -125,10 +122,7 @@ func paginate[T any](items []T, page, pageSize int) ([]T, PageMeta) {
 		meta := PageMeta{Page: page, PageSize: pageSize, Total: total, TotalPages: totalPages}
 		return []T{}, meta
 	}
-	end := start + pageSize
-	if end > total {
-		end = total
-	}
+	end := min(start+pageSize, total)
 	slice := items[start:end]
 	meta := PageMeta{Page: page, PageSize: pageSize, Total: total, TotalPages: totalPages}
 	return slice, meta

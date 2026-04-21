@@ -798,7 +798,7 @@ func (h *ProfileHandler) soapRespond(c *gin.Context, responseName string, body f
 }
 
 func (h *ProfileHandler) soapFault(c *gin.Context, code, msg string) {
-	c.Data(http.StatusBadRequest, "text/xml; charset=utf-8", []byte(fmt.Sprintf(
+	c.Data(http.StatusBadRequest, "text/xml; charset=utf-8", fmt.Appendf(nil,
 		`<?xml version="1.0" encoding="UTF-8"?>`+
 			`<soap:Envelope xmlns:soap=%q>`+
 			`<soap:Body><soap:Fault>`+
@@ -806,7 +806,7 @@ func (h *ProfileHandler) soapFault(c *gin.Context, code, msg string) {
 			`<faultstring>%s</faultstring>`+
 			`</soap:Fault></soap:Body></soap:Envelope>`,
 		soapNS, code, msg,
-	)))
+	))
 }
 
 func (h *ProfileHandler) soapRespondOne(c *gin.Context, responseName string, internal any, out *OutputMapping) {

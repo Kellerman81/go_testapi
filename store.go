@@ -4,7 +4,9 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
+	"maps"
 	"path/filepath"
+	"slices"
 	"sort"
 	"sync"
 	"time"
@@ -146,12 +148,8 @@ func (s *Store) initAttributes(patch map[string]any) map[string]any {
 		return nil
 	}
 	attrs := make(map[string]any, len(s.customFields))
-	for k, v := range s.customFields {
-		attrs[k] = v
-	}
-	for k, v := range patch {
-		attrs[k] = v
-	}
+	maps.Copy(attrs, s.customFields)
+	maps.Copy(attrs, patch)
 	return attrs
 }
 
@@ -277,10 +275,8 @@ func (s *Store) AddPermission(id, permission string) ([]string, error) {
 	if !ok {
 		return nil, ErrNotFound
 	}
-	for _, p := range u.Permissions {
-		if p == permission {
-			return append([]string{}, u.Permissions...), nil
-		}
+	if slices.Contains(u.Permissions, permission) {
+		return append([]string{}, u.Permissions...), nil
 	}
 	u.Permissions = append(u.Permissions, permission)
 	u.UpdatedAt = time.Now()

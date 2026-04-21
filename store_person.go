@@ -1,6 +1,7 @@
 package main
 
 import (
+	"maps"
 	"path/filepath"
 	"sort"
 	"sync"
@@ -69,12 +70,12 @@ type personFile struct {
 // PersonStore is a thread-safe store for persons and their contracts,
 // with optional file persistence.
 type PersonStore struct {
-	mu               sync.RWMutex
-	persons          map[string]*Person
-	contracts        map[string]*Contract // keyed by contract ID
-	dataDir          string               // empty = memory-only
-	personFields     map[string]any       // default attributes for new persons
-	contractFields   map[string]any       // default attributes for new contracts
+	mu             sync.RWMutex
+	persons        map[string]*Person
+	contracts      map[string]*Contract // keyed by contract ID
+	dataDir        string               // empty = memory-only
+	personFields   map[string]any       // default attributes for new persons
+	contractFields map[string]any       // default attributes for new contracts
 }
 
 // NewPersonStore returns a store. When dataDir is non-empty it loads
@@ -228,12 +229,8 @@ func initAttrs(defaults, patch map[string]any) map[string]any {
 		return nil
 	}
 	attrs := make(map[string]any, len(defaults))
-	for k, v := range defaults {
-		attrs[k] = v
-	}
-	for k, v := range patch {
-		attrs[k] = v
-	}
+	maps.Copy(attrs, defaults)
+	maps.Copy(attrs, patch)
 	return attrs
 }
 

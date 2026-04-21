@@ -10,7 +10,7 @@ import (
 // saveJSON atomically writes v as indented JSON to path.
 // It writes to a sibling .tmp file first, then renames it, so a crash
 // mid-write never leaves a corrupt file.
-func saveJSON(path string, v interface{}) error {
+func saveJSON(path string, v any) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}
@@ -35,7 +35,7 @@ func saveJSON(path string, v interface{}) error {
 
 // loadJSON reads JSON from path into v.
 // Returns nil (not an error) when the file does not exist yet.
-func loadJSON(path string, v interface{}) error {
+func loadJSON(path string, v any) error {
 	f, err := os.Open(path)
 	if os.IsNotExist(err) {
 		return nil

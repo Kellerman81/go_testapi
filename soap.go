@@ -25,24 +25,24 @@ type soapBody struct {
 // soapRequest is the parsed body of any incoming SOAP call.
 // It covers fields for both user and person/contract operations.
 type soapRequest struct {
-	XMLName    xml.Name
+	XMLName xml.Name
 	// shared
-	ID         string `xml:"Id"`
+	ID string `xml:"Id"`
 	// user fields
 	Username   string `xml:"Username"`
 	Email      string `xml:"Email"`
 	Enabled    string `xml:"Enabled"` // "true" / "false"
 	Permission string `xml:"Permission"`
 	// person fields
-	FirstName  string `xml:"FirstName"`
-	LastName   string `xml:"LastName"`
-	Birthday   string `xml:"Birthday"`
-	Street     string `xml:"Street"`
-	City       string `xml:"City"`
-	State      string `xml:"State"`
-	Zip        string `xml:"Zip"`
-	Country    string `xml:"Country"`
-	Phone      string `xml:"Phone"` // single phone for add/remove
+	FirstName string `xml:"FirstName"`
+	LastName  string `xml:"LastName"`
+	Birthday  string `xml:"Birthday"`
+	Street    string `xml:"Street"`
+	City      string `xml:"City"`
+	State     string `xml:"State"`
+	Zip       string `xml:"Zip"`
+	Country   string `xml:"Country"`
+	Phone     string `xml:"Phone"` // single phone for add/remove
 	// contract fields
 	ContractID string `xml:"ContractId"`
 	Manager    string `xml:"Manager"`
@@ -55,9 +55,9 @@ type soapRequest struct {
 
 // SOAPHandler handles SOAP requests and the WSDL endpoint.
 type SOAPHandler struct {
-	store            *Store
-	personStore      *PersonStore
-	profileHandler   *ProfileHandler
+	store             *Store
+	personStore       *PersonStore
+	profileHandler    *ProfileHandler
 	profileSOAPRoutes map[string]*Route
 }
 
@@ -433,7 +433,7 @@ func (h *SOAPHandler) respond(c *gin.Context, responseName string, body func(*xm
 }
 
 func (h *SOAPHandler) fault(c *gin.Context, httpStatus int, code, msg string) {
-	c.Data(httpStatus, "text/xml; charset=utf-8", []byte(fmt.Sprintf(
+	c.Data(httpStatus, "text/xml; charset=utf-8", fmt.Appendf(nil,
 		`<?xml version="1.0" encoding="UTF-8"?>`+
 			`<soap:Envelope xmlns:soap=%q>`+
 			`<soap:Body><soap:Fault>`+
@@ -441,7 +441,7 @@ func (h *SOAPHandler) fault(c *gin.Context, httpStatus int, code, msg string) {
 			`<faultstring>%s</faultstring>`+
 			`</soap:Fault></soap:Body></soap:Envelope>`,
 		soapNS, code, msg,
-	)))
+	))
 }
 
 func stripSOAPAction(s string) string {
