@@ -62,12 +62,14 @@ Copy `config.template.json` to `config.json` and adjust as needed.
 | `pagination.users.max_page_size` | `100` | Max page size for users |
 | `pagination.persons.default_page_size` | `20` | Default page size for persons |
 | `pagination.persons.max_page_size` | `100` | Max page size for persons |
+| `log_file` | `go_testapi.log` | Path to the request/response log file. Set to `""` to disable. |
 
 ### OpenID Connect SSO (optional)
 
 | Key | Description |
 |-----|-------------|
 | `oidc.discovery_url` | IdP discovery URL (leave empty to disable) |
+
 | `oidc.client_id` | OIDC client ID |
 | `oidc.client_secret` | OIDC client secret |
 | `oidc.redirect_url` | Callback URL, e.g. `http://localhost:8080/oidc/callback` |
@@ -120,6 +122,31 @@ When configured, the following routes are available:
 | `GET /oidc/callback` | IdP callback |
 | `GET /oidc/logout` | Clear session and log out |
 | `GET /oidc/me` | HTML profile page with claims and permissions |
+
+---
+
+## Logging
+
+Every request and its response are written to the file configured by `log_file` (default: `go_testapi.log`). Set `"log_file": ""` to disable file logging.
+
+Each log entry shows:
+
+```
+================================================================================
+2025-04-21 14:03:12.456  POST /users/abc123/groups  →  200 OK  (312µs)
+Auth:   Basic dGVzdC1jbGllbn…
+C-Type: application/json
+────────────────────────────────────────
+Request body:
+{"groupGuid":"product-001"}
+────────────────────────────────────────
+Response body:
+{"id":"abc123","userName":"jdoe","isEnabled":true,...}
+```
+
+- The `Auth` header is truncated to avoid logging full tokens.
+- Request and response bodies are capped at 64 KB.
+- Requests without a body or response omit those sections.
 
 ---
 

@@ -101,6 +101,58 @@
       "method": "DELETE",
       "path":   "/users/:id",
       "action": "delete_user"
+    },
+
+    {
+      "method": "GET",
+      "path":   "/groups",
+      "action": "list_groups",
+      "output": {
+        "raw":        true,
+        "id_field":   "groupGuid",
+        "name_field": "name"
+      }
+    },
+    {
+      "method": "POST",
+      "path":            "/users/:id/groups",
+      "action":          "link_group",
+      "user_body_field": "groupGuid",
+      "status":          200
+    },
+    {
+      "method": "DELETE",
+      "path":   "/users/:id/groups/:groupId",
+      "action": "unlink_group",
+      "status": 200
+    },
+
+    {
+      "method": "GET",
+      "path":   "/products",
+      "action": "static",
+      "body": [
+        { "productId": "product-001", "name": "Product A", "description": "Sample product A" },
+        { "productId": "product-002", "name": "Product B", "description": "Sample product B" }
+      ]
+    },
+    {
+      "method": "GET",
+      "path":   "/product-assignment/by-user/:id",
+      "action": "static",
+      "body":   []
+    },
+    {
+      "method": "POST",
+      "path":   "/selfservice/products/request",
+      "action": "static",
+      "body":   { "success": true }
+    },
+    {
+      "method": "POST",
+      "path":   "/product-assignment/unassign/by-product",
+      "action": "static",
+      "body":   { "success": true }
     }
   ]
 }

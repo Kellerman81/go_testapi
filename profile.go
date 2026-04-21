@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"os"
 	"strings"
 	"time"
@@ -55,6 +56,12 @@ type Route struct {
 	// TargetField is the internal User field name used by set_user_field / clear_user_field actions.
 	TargetField string `json:"target_field"`
 
+	// SoapOperation: when set, this route handles a SOAP operation at the /soap endpoint.
+	// method and path are ignored. The operation is matched by the SOAP body root element name.
+	SoapOperation string `json:"soap_operation"`
+	// SoapResponse is the response wrapper element name. Defaults to SoapOperation+"Response".
+	SoapResponse string `json:"soap_response"`
+
 	// TokenField is the dot-notation path in the response where the issued token is placed.
 	// Used by the issue_token action. The rest of the response comes from body.
 	// Example: "data.token" → { ..., "data": { "token": "<token>" } }
@@ -64,9 +71,9 @@ type Route struct {
 	UserBodyField   string `json:"user_body_field"`   // JSON field in POST body that holds the user ID
 	UserBodyExtract string `json:"user_body_extract"` // "" (direct) or "last_path_segment"
 
-	Input  *InputMapping  `json:"input"`  // request body mapping (create/update)
-	Output *OutputMapping `json:"output"` // response shaping (list/get/create/update)
-	Body   map[string]any `json:"body"`   // static response body (action: "static")
+	Input  *InputMapping    `json:"input"`  // request body mapping (create/update)
+	Output *OutputMapping   `json:"output"` // response shaping (list/get/create/update)
+	Body   json.RawMessage  `json:"body"`   // static response body; any JSON value (object, array, …)
 
 	// Limiter selects the rate-limiter bucket: "user" (default) or "person"
 	Limiter string `json:"limiter"`
@@ -261,15 +268,11 @@ func forwardTransform(internal any, out *OutputMapping) (map[string]any, error) 
 	}
 
 	item := make(map[string]any, len(out.ItemExtra)+2)
-	for k, v := range out.ItemExtra {
-		item[k] = v
-	}
+	maps.Copy(item, out.ItemExtra)
 	if out.ItemKey != "" {
 		item[out.ItemKey] = fields
 	} else {
-		for k, v := range fields {
-			item[k] = v
-		}
+		maps.Copy(item, fields)
 	}
 	return item, nil
 }
@@ -320,9 +323,7 @@ func wrapList(items []any, out *OutputMapping) map[string]any {
 		key = "items"
 	}
 	result := make(map[string]any, len(out.ListExtra)+1)
-	for k, v := range out.ListExtra {
-		result[k] = v
-	}
+	maps.Copy(result, out.ListExtra)
 	result[key] = items
 	return result
 }

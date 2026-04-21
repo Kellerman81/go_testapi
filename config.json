@@ -10,6 +10,7 @@
 
   "seed_data": true,
   "profile_path": "",
+  "log_file": "testapi.log",
 
   "oidc": {
     "discovery_url":               "",

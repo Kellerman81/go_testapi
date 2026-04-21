@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"net/http"
-"strings"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -209,8 +211,9 @@ func (h *ProfileHandler) actUpdateUser(c *gin.Context, route *Route) {
 		return
 	}
 	// Handle enabled specially: its zero value (false) is a valid update.
+	// field_map is internal→external, so look up "enabled" directly as a key.
 	if route.Input != nil {
-		if extKey := reverseFieldLookup(route.Input.FieldMap, "enabled"); extKey != "" {
+		if extKey, ok := route.Input.FieldMap["enabled"]; ok && extKey != "" {
 			if _, present := src[extKey]; present {
 				updated, err = h.store.SetEnabled(id, patch.Enabled)
 				if err != nil {
@@ -315,22 +318,44 @@ func (h *ProfileHandler) actListGroups(c *gin.Context, route *Route) {
 }
 
 func (h *ProfileHandler) actLinkGroup(c *gin.Context, route *Route) {
-	groupID := c.Param("groupId")
-	bodyField := route.UserBodyField
-	if bodyField == "" {
-		bodyField = "userId"
+	var userID, groupID string
+	if urlGroupID := c.Param("groupId"); urlGroupID != "" {
+		// Entra style: group in URL param, user read from request body.
+		groupID = urlGroupID
+		bodyField := route.UserBodyField
+		if bodyField == "" {
+			bodyField = "userId"
+		}
+		var body map[string]any
+		if err := json.NewDecoder(c.Request.Body).Decode(&body); err != nil {
+			respondMsg(c, http.StatusBadRequest, "invalid request body: "+err.Error())
+			return
+		}
+		rawID, _ := body[bodyField].(string)
+		if rawID == "" {
+			respondMsg(c, http.StatusBadRequest, bodyField+" is required in request body")
+			return
+		}
+		userID = extractUserID(rawID, route.UserBodyExtract)
+	} else {
+		// HelloID style: user in URL param :id, group read from request body.
+		userID = c.Param("id")
+		bodyField := route.UserBodyField
+		if bodyField == "" {
+			bodyField = "groupGuid"
+		}
+		var body map[string]any
+		if err := json.NewDecoder(c.Request.Body).Decode(&body); err != nil {
+			respondMsg(c, http.StatusBadRequest, "invalid request body: "+err.Error())
+			return
+		}
+		rawGroup, _ := body[bodyField].(string)
+		if rawGroup == "" {
+			respondMsg(c, http.StatusBadRequest, bodyField+" is required in request body")
+			return
+		}
+		groupID = extractUserID(rawGroup, route.UserBodyExtract)
 	}
-	var body map[string]any
-	if err := json.NewDecoder(c.Request.Body).Decode(&body); err != nil {
-		respondMsg(c, http.StatusBadRequest, "invalid request body: "+err.Error())
-		return
-	}
-	rawID, _ := body[bodyField].(string)
-	if rawID == "" {
-		respondMsg(c, http.StatusBadRequest, bodyField+" is required in request body")
-		return
-	}
-	userID := extractUserID(rawID, route.UserBodyExtract)
 	if _, err := h.store.AddPermission(userID, groupID); err != nil {
 		respondError(c, err)
 		return
@@ -339,7 +364,11 @@ func (h *ProfileHandler) actLinkGroup(c *gin.Context, route *Route) {
 }
 
 func (h *ProfileHandler) actUnlinkGroup(c *gin.Context, route *Route) {
-	if _, err := h.store.RemovePermission(c.Param("userId"), c.Param("groupId")); err != nil {
+	userID := c.Param("userId")
+	if userID == "" {
+		userID = c.Param("id")
+	}
+	if _, err := h.store.RemovePermission(userID, c.Param("groupId")); err != nil {
 		respondError(c, err)
 		return
 	}
@@ -619,9 +648,12 @@ func (h *ProfileHandler) dispatchSetField(id, field, value string) (User, error)
 // The rest of the response body comes from route.Body (static fields).
 func (h *ProfileHandler) actIssueToken(c *gin.Context, route *Route) {
 	token, _ := h.auth.IssueToken()
-	resp := make(map[string]any)
-	for k, v := range route.Body {
-		resp[k] = v
+	var resp map[string]any
+	if len(route.Body) > 0 {
+		_ = json.Unmarshal(route.Body, &resp)
+	}
+	if resp == nil {
+		resp = make(map[string]any)
 	}
 	if route.TokenField != "" {
 		setNestedValue(resp, route.TokenField, token)
@@ -633,8 +665,8 @@ func (h *ProfileHandler) actIssueToken(c *gin.Context, route *Route) {
 
 func (h *ProfileHandler) actStatic(c *gin.Context, route *Route) {
 	st := routeStatus(route, http.StatusOK)
-	if route.Body != nil {
-		c.IndentedJSON(st, route.Body)
+	if len(route.Body) > 0 {
+		c.Data(st, "application/json; charset=utf-8", route.Body)
 		return
 	}
 	if noContent(c, st) {
@@ -643,11 +675,351 @@ func (h *ProfileHandler) actStatic(c *gin.Context, route *Route) {
 	respondMsg(c, st, http.StatusText(st))
 }
 
+// ---- SOAP profile support ----
+
+// parseSoapFields parses the direct child elements of the SOAP body root into a flat map.
+func parseSoapFields(inner []byte) map[string]any {
+	dec := xml.NewDecoder(bytes.NewReader(inner))
+	result := make(map[string]any)
+	depth := 0
+	var currentKey string
+	for {
+		tok, err := dec.Token()
+		if err != nil {
+			break
+		}
+		switch t := tok.(type) {
+		case xml.StartElement:
+			depth++
+			if depth == 2 {
+				currentKey = t.Name.Local
+			}
+		case xml.CharData:
+			if depth == 2 && currentKey != "" {
+				if s := strings.TrimSpace(string(t)); s != "" {
+					result[currentKey] = s
+				}
+			}
+		case xml.EndElement:
+			if depth == 2 {
+				currentKey = ""
+			}
+			depth--
+		}
+	}
+	return result
+}
+
+// soapGetField retrieves a value by internal key via input mapping, with common XML name fallbacks.
+func soapGetField(fields map[string]any, in *InputMapping, internalKey string) string {
+	if in != nil {
+		if extKey, ok := in.FieldMap[internalKey]; ok {
+			if v, ok := fields[extKey]; ok {
+				return fmt.Sprintf("%v", v)
+			}
+		}
+	}
+	switch internalKey {
+	case "id":
+		if v, ok := fields["Id"]; ok {
+			return fmt.Sprintf("%v", v)
+		}
+	case "person_id":
+		if v, ok := fields["PersonId"]; ok {
+			return fmt.Sprintf("%v", v)
+		}
+	}
+	return ""
+}
+
+// writeSOAPMap encodes a map[string]any as XML child elements recursively.
+func writeSOAPMap(enc *xml.Encoder, m map[string]any) {
+	for k, v := range m {
+		if sub, ok := v.(map[string]any); ok {
+			start := xml.StartElement{Name: xml.Name{Local: k}}
+			_ = enc.EncodeToken(start)
+			writeSOAPMap(enc, sub)
+			_ = enc.EncodeToken(start.End())
+		} else {
+			_ = enc.EncodeElement(fmt.Sprintf("%v", v), xml.StartElement{Name: xml.Name{Local: k}})
+		}
+	}
+}
+
+func (h *ProfileHandler) soapRespond(c *gin.Context, responseName string, body func(*xml.Encoder)) {
+	c.Status(http.StatusOK)
+	c.Header("Content-Type", "text/xml; charset=utf-8")
+	enc := xml.NewEncoder(c.Writer)
+	enc.Indent("", "  ")
+	_ = enc.EncodeToken(xml.StartElement{
+		Name: xml.Name{Space: soapNS, Local: "Envelope"},
+		Attr: []xml.Attr{
+			{Name: xml.Name{Local: "xmlns:soap"}, Value: soapNS},
+			{Name: xml.Name{Local: "xmlns:tns"}, Value: apiNS},
+		},
+	})
+	_ = enc.EncodeToken(xml.StartElement{Name: xml.Name{Space: soapNS, Local: "Body"}})
+	_ = enc.EncodeToken(xml.StartElement{Name: xml.Name{Space: apiNS, Local: responseName}})
+	body(enc)
+	_ = enc.EncodeToken(xml.EndElement{Name: xml.Name{Space: apiNS, Local: responseName}})
+	_ = enc.EncodeToken(xml.EndElement{Name: xml.Name{Space: soapNS, Local: "Body"}})
+	_ = enc.EncodeToken(xml.EndElement{Name: xml.Name{Space: soapNS, Local: "Envelope"}})
+	_ = enc.Flush()
+}
+
+func (h *ProfileHandler) soapFault(c *gin.Context, code, msg string) {
+	c.Data(http.StatusBadRequest, "text/xml; charset=utf-8", []byte(fmt.Sprintf(
+		`<?xml version="1.0" encoding="UTF-8"?>`+
+			`<soap:Envelope xmlns:soap=%q>`+
+			`<soap:Body><soap:Fault>`+
+			`<faultcode>soap:%s</faultcode>`+
+			`<faultstring>%s</faultstring>`+
+			`</soap:Fault></soap:Body></soap:Envelope>`,
+		soapNS, code, msg,
+	)))
+}
+
+func (h *ProfileHandler) soapRespondOne(c *gin.Context, responseName string, internal any, out *OutputMapping) {
+	item, err := forwardTransform(internal, out)
+	if err != nil {
+		h.soapFault(c, "Server", err.Error())
+		return
+	}
+	h.soapRespond(c, responseName, func(enc *xml.Encoder) { writeSOAPMap(enc, item) })
+}
+
+func (h *ProfileHandler) soapRespondList(c *gin.Context, responseName string, items []any, out *OutputMapping) {
+	itemKey := "Item"
+	if out != nil && out.ItemKey != "" {
+		itemKey = out.ItemKey
+	}
+	h.soapRespond(c, responseName, func(enc *xml.Encoder) {
+		for _, item := range items {
+			if m, ok := item.(map[string]any); ok {
+				start := xml.StartElement{Name: xml.Name{Local: itemKey}}
+				_ = enc.EncodeToken(start)
+				writeSOAPMap(enc, m)
+				_ = enc.EncodeToken(start.End())
+			}
+		}
+	})
+}
+
+func (h *ProfileHandler) soapRespondMsg(c *gin.Context, responseName, msg string) {
+	h.soapRespond(c, responseName, func(enc *xml.Encoder) {
+		_ = enc.EncodeElement(msg, xml.StartElement{Name: xml.Name{Local: "Message"}})
+	})
+}
+
+// HandleSOAP dispatches a profile-defined SOAP operation using the route's action and mappings.
+func (h *ProfileHandler) HandleSOAP(c *gin.Context, route *Route, inner []byte) {
+	fields := parseSoapFields(inner)
+
+	responseName := route.SoapResponse
+	if responseName == "" {
+		responseName = route.SoapOperation + "Response"
+	}
+
+	internalID := soapGetField(fields, route.Input, "id")
+
+	switch route.Action {
+	case "list_users":
+		items, err := transformItems(h.store.List(), route.Output)
+		if err != nil {
+			h.soapFault(c, "Server", err.Error())
+			return
+		}
+		h.soapRespondList(c, responseName, items, route.Output)
+
+	case "get_user":
+		u, err := h.store.Get(internalID)
+		if err != nil {
+			h.soapFault(c, "Client", err.Error())
+			return
+		}
+		h.soapRespondOne(c, responseName, u, route.Output)
+
+	case "create_user":
+		var u User
+		if _, err := reverseTransform(fields, route.Input, &u); err != nil {
+			h.soapFault(c, "Client", err.Error())
+			return
+		}
+		created, err := h.store.Create(u)
+		if err != nil {
+			h.soapFault(c, "Client", err.Error())
+			return
+		}
+		h.soapRespondOne(c, responseName, created, route.Output)
+
+	case "update_user":
+		var patch User
+		if _, err := reverseTransform(fields, route.Input, &patch); err != nil {
+			h.soapFault(c, "Client", err.Error())
+			return
+		}
+		updated, err := h.store.Update(internalID, patch)
+		if err != nil {
+			h.soapFault(c, "Client", err.Error())
+			return
+		}
+		h.soapRespondOne(c, responseName, updated, route.Output)
+
+	case "delete_user":
+		if err := h.store.Delete(internalID); err != nil {
+			h.soapFault(c, "Client", err.Error())
+			return
+		}
+		h.soapRespondMsg(c, responseName, "deleted")
+
+	case "enable_user":
+		u, err := h.store.SetEnabled(internalID, true)
+		if err != nil {
+			h.soapFault(c, "Client", err.Error())
+			return
+		}
+		h.soapRespondOne(c, responseName, u, route.Output)
+
+	case "disable_user":
+		u, err := h.store.SetEnabled(internalID, false)
+		if err != nil {
+			h.soapFault(c, "Client", err.Error())
+			return
+		}
+		h.soapRespondOne(c, responseName, u, route.Output)
+
+	case "list_persons":
+		items, err := transformItems(h.personStore.ListPersons(), route.Output)
+		if err != nil {
+			h.soapFault(c, "Server", err.Error())
+			return
+		}
+		h.soapRespondList(c, responseName, items, route.Output)
+
+	case "get_person":
+		p, err := h.personStore.GetPerson(internalID)
+		if err != nil {
+			h.soapFault(c, "Client", err.Error())
+			return
+		}
+		h.soapRespondOne(c, responseName, p, route.Output)
+
+	case "create_person":
+		var p Person
+		if _, err := reverseTransform(fields, route.Input, &p); err != nil {
+			h.soapFault(c, "Client", err.Error())
+			return
+		}
+		created, err := h.personStore.CreatePerson(p)
+		if err != nil {
+			h.soapFault(c, "Client", err.Error())
+			return
+		}
+		h.soapRespondOne(c, responseName, created, route.Output)
+
+	case "update_person":
+		var patch Person
+		if _, err := reverseTransform(fields, route.Input, &patch); err != nil {
+			h.soapFault(c, "Client", err.Error())
+			return
+		}
+		updated, err := h.personStore.UpdatePerson(internalID, patch)
+		if err != nil {
+			h.soapFault(c, "Client", err.Error())
+			return
+		}
+		h.soapRespondOne(c, responseName, updated, route.Output)
+
+	case "delete_person":
+		if err := h.personStore.DeletePerson(internalID); err != nil {
+			h.soapFault(c, "Client", err.Error())
+			return
+		}
+		h.soapRespondMsg(c, responseName, "deleted")
+
+	case "list_contracts":
+		personID := soapGetField(fields, route.Input, "person_id")
+		if personID == "" {
+			personID = internalID
+		}
+		contracts, err := h.personStore.ListContracts(personID)
+		if err != nil {
+			h.soapFault(c, "Client", err.Error())
+			return
+		}
+		items, err := transformItems(contracts, route.Output)
+		if err != nil {
+			h.soapFault(c, "Server", err.Error())
+			return
+		}
+		h.soapRespondList(c, responseName, items, route.Output)
+
+	case "get_contract":
+		personID := soapGetField(fields, route.Input, "person_id")
+		contractID := internalID
+		ct, err := h.personStore.GetContract(personID, contractID)
+		if err != nil {
+			h.soapFault(c, "Client", err.Error())
+			return
+		}
+		h.soapRespondOne(c, responseName, ct, route.Output)
+
+	case "create_contract":
+		personID := soapGetField(fields, route.Input, "person_id")
+		if personID == "" {
+			personID = internalID
+		}
+		var ct Contract
+		if _, err := reverseTransform(fields, route.Input, &ct); err != nil {
+			h.soapFault(c, "Client", err.Error())
+			return
+		}
+		created, err := h.personStore.CreateContract(personID, ct)
+		if err != nil {
+			h.soapFault(c, "Client", err.Error())
+			return
+		}
+		h.soapRespondOne(c, responseName, created, route.Output)
+
+	case "update_contract":
+		personID := soapGetField(fields, route.Input, "person_id")
+		contractID := internalID
+		var patch Contract
+		if _, err := reverseTransform(fields, route.Input, &patch); err != nil {
+			h.soapFault(c, "Client", err.Error())
+			return
+		}
+		updated, err := h.personStore.UpdateContract(personID, contractID, patch)
+		if err != nil {
+			h.soapFault(c, "Client", err.Error())
+			return
+		}
+		h.soapRespondOne(c, responseName, updated, route.Output)
+
+	case "delete_contract":
+		personID := soapGetField(fields, route.Input, "person_id")
+		contractID := internalID
+		if err := h.personStore.DeleteContract(personID, contractID); err != nil {
+			h.soapFault(c, "Client", err.Error())
+			return
+		}
+		h.soapRespondMsg(c, responseName, "deleted")
+
+	default:
+		h.soapFault(c, "Client", "unsupported action for SOAP: "+route.Action)
+	}
+}
+
 // RegisterProfileRoutes wires all profile-defined routes into the router.
-func RegisterProfileRoutes(r *gin.Engine, p *Profile, auth *AuthService, userLimiter, personLimiter *ResourceLimiter, s *Store, ps *PersonStore) {
+func RegisterProfileRoutes(r *gin.Engine, p *Profile, auth *AuthService, userLimiter, personLimiter *ResourceLimiter, s *Store, ps *PersonStore, soap *SOAPHandler) {
 	h := NewProfileHandler(p, s, ps, auth)
+	soapRoutes := make(map[string]*Route)
 	for i := range p.Routes {
-		route := p.Routes[i]
+		route := &p.Routes[i]
+		if route.SoapOperation != "" {
+			soapRoutes[route.SoapOperation] = route
+			continue
+		}
 		var lim gin.HandlerFunc
 		if route.Limiter == "person" {
 			lim = personLimiter.Middleware()
@@ -657,12 +1029,15 @@ func RegisterProfileRoutes(r *gin.Engine, p *Profile, auth *AuthService, userLim
 		// issue_token is the auth endpoint itself — no token required to call it.
 		if route.Action == "issue_token" {
 			r.Handle(strings.ToUpper(route.Method), route.Path, func(c *gin.Context) {
-				h.dispatch(c, &route)
+				h.dispatch(c, route)
 			})
 		} else {
 			r.Handle(strings.ToUpper(route.Method), route.Path, auth.Middleware(), lim, func(c *gin.Context) {
-				h.dispatch(c, &route)
+				h.dispatch(c, route)
 			})
 		}
+	}
+	if len(soapRoutes) > 0 {
+		soap.SetProfileSOAP(h, soapRoutes)
 	}
 }

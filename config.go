@@ -102,6 +102,9 @@ type Config struct {
 	// ProfilePath is the path to a profile JSON file that adds alternative
 	// endpoints shaped like another API (e.g. Personio, Entra). Leave empty to disable.
 	ProfilePath string `json:"profile_path"`
+	// LogFile is the path to the request/response log file.
+	// Defaults to "go_testapi.log". Set to "" to disable file logging.
+	LogFile string `json:"log_file"`
 }
 
 func defaultConfig() Config {
@@ -111,6 +114,7 @@ func defaultConfig() Config {
 		Secret:      "test-secret",
 		TokenExpiry: 3600,
 		SeedData:    true,
+		LogFile:     "go_testapi.log",
 		Storage: StorageConfig{
 			Type: "memory",
 			Path: "./data",

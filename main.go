@@ -42,7 +42,16 @@ func main() {
 	}
 
 	gin.SetMode(gin.ReleaseMode)
-	r := gin.Default()
+	r := gin.New()
+	r.Use(gin.Recovery())
+	if cfg.LogFile != "" {
+		logger, logFile, err := SetupLogger(cfg.LogFile)
+		if err != nil {
+			log.Fatalf("log file: %v", err)
+		}
+		defer logFile.Close()
+		r.Use(RequestLogger(logger))
+	}
 
 	// ---- unauthenticated ----
 	r.GET("/health", func(c *gin.Context) { c.JSON(200, gin.H{"status": "ok"}) })
@@ -98,7 +107,7 @@ func main() {
 
 	// ---- profile mock routes (optional) ----
 	if profile != nil {
-		RegisterProfileRoutes(r, profile, auth, userLimiter, personLimiter, store, personStore)
+		RegisterProfileRoutes(r, profile, auth, userLimiter, personLimiter, store, personStore, soap)
 	}
 
 	printBanner(cfg)

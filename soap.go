@@ -55,12 +55,21 @@ type soapRequest struct {
 
 // SOAPHandler handles SOAP requests and the WSDL endpoint.
 type SOAPHandler struct {
-	store       *Store
-	personStore *PersonStore
+	store            *Store
+	personStore      *PersonStore
+	profileHandler   *ProfileHandler
+	profileSOAPRoutes map[string]*Route
 }
 
 func NewSOAPHandler(s *Store, ps *PersonStore) *SOAPHandler {
 	return &SOAPHandler{store: s, personStore: ps}
+}
+
+// SetProfileSOAP wires profile-defined SOAP operations into the handler.
+// Unknown operations are checked against this map before returning a fault.
+func (h *SOAPHandler) SetProfileSOAP(ph *ProfileHandler, routes map[string]*Route) {
+	h.profileHandler = ph
+	h.profileSOAPRoutes = routes
 }
 
 // Handler dispatches SOAP operations.
@@ -126,6 +135,10 @@ func (h *SOAPHandler) Handler(c *gin.Context) {
 	case "DeleteContract":
 		h.deleteContract(c, req.ID, req.ContractID)
 	default:
+		if route, ok := h.profileSOAPRoutes[op]; ok {
+			h.profileHandler.HandleSOAP(c, route, env.Body.Inner)
+			return
+		}
 		h.fault(c, http.StatusBadRequest, "Client", "Unknown operation: "+op)
 	}
 }

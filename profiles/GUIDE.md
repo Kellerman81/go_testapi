@@ -35,9 +35,11 @@ Each entry in `routes` maps one external HTTP endpoint to one internal action.
 | `target_field` | string | Internal field to write for `set_user_field` / `clear_user_field` |
 | `user_body_field` | string | JSON key in POST body that holds the user ID (for `link_group`, `set_user_field`) |
 | `user_body_extract` | string | How to extract the value: `""` = use as-is, `"last_path_segment"` = last URL segment |
+| `soap_operation` | string | When set, this route handles a SOAP operation instead of a REST endpoint. `method` and `path` are ignored. The operation is matched by the root element name of the SOAP body (or `SOAPAction` header). |
+| `soap_response` | string | Wrapper element name for the SOAP response. Defaults to `soap_operation + "Response"`. |
 | `input` | object | Request body mapping — see Input below |
 | `output` | object | Response shaping — see Output below |
-| `body` | object | Static JSON body returned by the `static` action |
+| `body` | any JSON | Static JSON body returned by the `static` action. Can be an object `{}` or an array `[]`. |
 | `limiter` | string | Rate-limiter bucket: `"user"` (default) or `"person"` |
 
 ---
@@ -63,8 +65,8 @@ Each entry in `routes` maps one external HTTP endpoint to one internal action.
 | Action | Default status | Description |
 |---|---|---|
 | `list_groups` | 200 | Return all unique permissions as group objects |
-| `link_group` | 200 | Add user to group. Body field configured via `user_body_field` + `user_body_extract` |
-| `unlink_group` | 200 | Remove user from group. Reads `:groupId` and `:userId` from path |
+| `link_group` | 200 | Add user to group. Two styles: **Entra** — group in URL (`:groupId`), user ID read from body via `user_body_field` / `user_body_extract`; **HelloID** — user in URL (`:id`), group GUID read from body via `user_body_field` (default `"groupGuid"`) |
+| `unlink_group` | 200 | Remove user from group. Reads group from `:groupId` and user from `:userId` or `:id` |
 
 ### Person / Contract actions
 
@@ -85,7 +87,86 @@ Each entry in `routes` maps one external HTTP endpoint to one internal action.
 
 | Action | Default status | Description |
 |---|---|---|
-| `static` | 200 | Return a fixed status (and optional `body`). Use for no-op endpoints |
+| `issue_token` | 200 | Mint a real Bearer token and embed it at `token_field` in the response. The rest of the response comes from `body`. Use for fake auth endpoints. |
+| `static` | 200 | Return a fixed status and optional `body` (object or array). Use for no-op or read-only stub endpoints. |
+
+---
+
+## SOAP routes
+
+Profile routes can handle SOAP operations in addition to REST endpoints. Set `soap_operation` instead of `method` / `path`. The SOAP handler matches incoming operations by the root XML element name of the SOAP body, or by the `SOAPAction` header.
+
+```json
+{
+  "soap_operation": "GetEmployee",
+  "soap_response":  "GetEmployeeResponse",
+  "action":         "get_user",
+  "input": {
+    "field_map": { "id": "EmployeeId" }
+  },
+  "output": {
+    "field_map": { "id": "EmployeeId", "username": "LoginName", "email": "Email" }
+  }
+}
+```
+
+### How fields are read from the SOAP request
+
+All direct child elements of the operation element are collected into a flat map and passed through the `input.field_map` (same as a JSON request body). For example:
+
+```xml
+<GetEmployee>
+  <EmployeeId>abc-123</EmployeeId>
+</GetEmployee>
+```
+
+With `"field_map": { "id": "EmployeeId" }` the engine looks up user `abc-123` by its internal ID.
+
+**ID resolution** — when no `input` is provided the engine falls back to common XML element name conventions:
+
+| Internal key | Fallback XML element |
+|---|---|
+| `id` | `Id` |
+| `person_id` | `PersonId` |
+
+### How the SOAP response is written
+
+Each field in `output.field_map` becomes an XML child element inside the response wrapper. Nested maps become nested elements. `field_formats` works the same as for REST.
+
+For list actions (`list_users`, `list_persons`, etc.) each item is wrapped in an element named by `output.item_key` (default: `Item`).
+
+### Supported actions for SOAP routes
+
+All user, person, and contract actions are supported. The same action names as REST apply — see the Actions table above.
+
+For **contract** operations the engine resolves IDs as follows:
+
+| Field | Resolved from |
+|---|---|
+| Person ID (list / create) | `input.field_map["person_id"]`, fallback `input.field_map["id"]` |
+| Person ID (get / update / delete) | `input.field_map["person_id"]` |
+| Contract ID (get / update / delete) | `input.field_map["id"]` |
+
+### Example — list and get operations
+
+```json
+[
+  {
+    "soap_operation": "ListEmployees",
+    "action": "list_users",
+    "output": {
+      "item_key": "Employee",
+      "field_map": { "id": "EmployeeId", "username": "LoginName" }
+    }
+  },
+  {
+    "soap_operation": "GetEmployee",
+    "action": "get_user",
+    "input":  { "field_map": { "id": "EmployeeId" } },
+    "output": { "field_map": { "id": "EmployeeId", "username": "LoginName" } }
+  }
+]
+```
 
 ---
 
