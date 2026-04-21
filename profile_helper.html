@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Profile Route Builder — go_testapi</title>
+<style>
+  :root {
+    --bg: #1e1e2e; --surface: #2a2a3e; --surface2: #323248; --border: #44445a;
+    --text: #cdd6f4; --text-dim: #a6adc8; --accent: #89b4fa; --accent2: #cba6f7;
+    --green: #a6e3a1; --red: #f38ba8; --yellow: #f9e2af;
+    --font: 'Segoe UI', system-ui, sans-serif; --mono: 'Consolas', 'Cascadia Code', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; line-height: 1.5; padding: 24px; max-width: 1000px; margin: 0 auto; }
+  h1 { font-size: 20px; color: var(--accent); margin-bottom: 4px; }
+  h2 { font-size: 12px; font-weight: 700; color: var(--accent2); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
+  p.sub { color: var(--text-dim); margin-bottom: 24px; font-size: 13px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 14px; }
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .g4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
+  label { display: block; font-size: 11px; color: var(--text-dim); margin-bottom: 3px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  input, select, textarea {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px;
+    color: var(--text); font-family: var(--font); font-size: 13px; padding: 6px 10px; outline: none; transition: border-color .15s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  select { cursor: pointer; }
+  textarea { font-family: var(--mono); font-size: 12px; resize: vertical; min-height: 110px; }
+  textarea.output-area { min-height: 280px; background: #12121e; color: #a6e3a1; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 5px; padding: 6px 14px;
+    border: 1px solid var(--border); border-radius: 4px; background: var(--surface2);
+    color: var(--text); font-size: 13px; cursor: pointer; transition: all .15s; font-family: var(--font);
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.primary { background: var(--accent); color: #1e1e2e; border-color: var(--accent); font-weight: 700; }
+  .btn.primary:hover { opacity: .85; color: #1e1e2e; }
+  .btn.success { background: var(--green); color: #1e1e2e; border-color: var(--green); font-weight: 700; }
+  .btn.success:hover { opacity: .85; color: #1e1e2e; }
+  .detect {
+    background: #12121e; border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px;
+    margin-top: 8px; font-size: 12px; font-family: var(--mono); color: var(--text-dim); display: none;
+  }
+  .detect.show { display: block; }
+  .detect .k { color: var(--accent2); } .detect .v { color: var(--green); } .detect .e { color: var(--red); }
+  .mrow { display: grid; grid-template-columns: 1fr 18px 1fr 26px; align-items: center; gap: 6px; margin-bottom: 5px; }
+  .mrow input[list] { background: var(--surface2); }
+  .mrow input[list]:valid { border-color: var(--border); }
+  .ifield-wrap { position: relative; }
+  .ifield-wrap .custom-input { margin-top: 4px; display: none; }
+  .ifield-wrap .custom-input.show { display: block; }
+  .arrow { text-align: center; color: var(--text-dim); font-size: 12px; }
+  .xbtn { background: none; border: 1px solid transparent; border-radius: 3px; color: var(--text-dim); cursor: pointer; font-size: 13px; padding: 2px 4px; line-height: 1; }
+  .xbtn:hover { border-color: var(--red); color: var(--red); }
+  .row-btns { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
+  .copy-ok { font-size: 12px; color: var(--green); opacity: 0; transition: opacity .3s; }
+  .copy-ok.show { opacity: 1; }
+  .hint { font-size: 11px; color: var(--text-dim); margin-top: 4px; font-style: italic; }
+  details summary { cursor: pointer; color: var(--text-dim); font-size: 12px; user-select: none; }
+  details summary:hover { color: var(--text); }
+  details[open] summary { margin-bottom: 12px; }
+  .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 14px; }
+  .tab { padding: 7px 14px; cursor: pointer; font-size: 13px; color: var(--text-dim); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all .15s; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tp { display: none; } .tp.active { display: block; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+  .msec { font-size: 11px; color: var(--accent2); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; margin: 10px 0 6px; padding-bottom: 3px; border-bottom: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<h1>Profile Route Builder</h1>
+<p class="sub">Select an action, configure the path, paste example JSON from the target API — get a ready-to-copy profile route definition.</p>
+
+<!-- ── Route Settings ─────────────────────────────────────────── -->
+<div class="card">
+  <h2>Route Settings</h2>
+  <div class="g2" style="margin-bottom:12px">
+    <div>
+      <label>Action</label>
+      <select id="action" onchange="onActionChange()">
+        <optgroup label="User Actions">
+          <option>list_users</option><option>get_user</option><option>create_user</option>
+          <option>update_user</option><option>delete_user</option><option>enable_user</option>
+          <option>disable_user</option><option>set_user_field</option><option>clear_user_field</option>
+        </optgroup>
+        <optgroup label="Group Actions">
+          <option>list_groups</option><option>link_group</option><option>unlink_group</option>
+        </optgroup>
+        <optgroup label="Person Actions">
+          <option selected>list_persons</option><option>get_person</option><option>create_person</option>
+          <option>update_person</option><option>delete_person</option>
+        </optgroup>
+        <optgroup label="Contract Actions">
+          <option>list_contracts</option><option>get_contract</option><option>create_contract</option>
+          <option>update_contract</option><option>delete_contract</option>
+        </optgroup>
+        <optgroup label="Utility">
+          <option>issue_token</option><option>static</option>
+        </optgroup>
+      </select>
+      <div id="action-hint" class="hint"></div>
+    </div>
+    <div>
+      <label>HTTP Method</label>
+      <select id="method"><option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option></select>
+    </div>
+  </div>
+  <div class="g3">
+    <div style="grid-column:span 2">
+      <label>Path</label>
+      <input id="path" value="/v1/company/employees" placeholder="/v1/...">
+    </div>
+    <div>
+      <label>Status Code</label>
+      <input id="status" type="number" value="200" min="100" max="599">
+    </div>
+  </div>
+</div>
+
+<!-- ── Optional Settings ─────────────────────────────────────────── -->
+<div class="card">
+  <details>
+    <summary>▸ Optional Settings (lookup_field, chain_field, limiter, token, static body, group linking)</summary>
+    <div class="g4">
+      <div><label>Lookup Field</label><input id="lookup_field" placeholder="username"></div>
+      <div><label>Chain Field</label><input id="chain_field" placeholder="manager"></div>
+      <div>
+        <label>Limiter</label>
+        <select id="limiter"><option value="">(none)</option><option>user</option><option>person</option></select>
+      </div>
+      <div><label>Token Field</label><input id="token_field" placeholder="data.token"></div>
+    </div>
+    <div id="static-body-wrap" style="margin-top:12px;display:none">
+      <label>Body (static / issue_token — JSON)</label>
+      <textarea id="static_body" rows="3" placeholder='{ "success": true, "data": {} }'></textarea>
+    </div>
+    <div id="group-wrap" style="margin-top:12px;display:none">
+      <div class="g2">
+        <div><label>Group Body Field (field in request body with group/user ID)</label><input id="group_body_field" placeholder="groupGuid"></div>
+        <div>
+          <label>User Body Extract</label>
+          <select id="user_body_extract"><option value="">(none)</option><option value="last_path_segment">last_path_segment</option></select>
+        </div>
+      </div>
+    </div>
+  </details>
+</div>
+
+<!-- ── Mapping Tabs ─────────────────────────────────────────── -->
+<div class="card">
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('t-out',this)">Output Mapping</div>
+    <div class="tab" onclick="switchTab('t-in',this)">Input Mapping</div>
+  </div>
+
+  <!-- Output Tab -->
+  <div id="t-out" class="tp active">
+    <h2>Example API Response (paste JSON from target API)</h2>
+    <textarea id="ex-resp" placeholder="Paste the JSON your target API returns here..."></textarea>
+    <div class="row-btns">
+      <button class="btn primary" onclick="analyzeResponse()">Analyze Response</button>
+      <button class="btn" onclick="document.getElementById('ex-resp').value='';hideDetect('d-resp')">Clear</button>
+    </div>
+    <div id="d-resp" class="detect"></div>
+
+    <hr>
+    <h2>Output Field Mappings &nbsp;<span style="font-size:11px;color:var(--text-dim);font-weight:400;text-transform:none">(internal field → external API field name)</span></h2>
+    <div id="out-maps"></div>
+    <div class="row-btns">
+      <button class="btn" onclick="addMap('out')">+ Add Row</button>
+      <button class="btn" onclick="resetOutMaps()">Reset to Defaults</button>
+    </div>
+
+    <hr>
+    <h2>Output Options</h2>
+    <div class="g4" style="margin-bottom:10px">
+      <div><label>List Key</label><input id="o-lk" placeholder="items"></div>
+      <div><label>Item Key</label><input id="o-ik" placeholder="attributes"></div>
+      <div>
+        <label>Attribute Style</label>
+        <select id="o-as"><option value="">(none)</option><option value="labeled">labeled</option></select>
+      </div>
+      <div>
+        <label>Raw (array, no wrapper)</label>
+        <select id="o-raw"><option value="">no</option><option value="true">yes</option></select>
+      </div>
+    </div>
+    <div class="g2" style="margin-bottom:10px">
+      <div><label>List Extra (JSON merged into list wrapper)</label><textarea id="o-le" rows="3" placeholder='{ "success": true }'></textarea></div>
+      <div><label>Item Extra (JSON merged into each item)</label><textarea id="o-ie" rows="3" placeholder='{ "type": "Employee" }'></textarea></div>
+    </div>
+    <div class="g2" style="margin-bottom:10px">
+      <div><label>Merge First Contract (prefix key, e.g. "contract")</label><input id="o-mfc" placeholder="contract"></div>
+      <div><label>Field Formats (JSON — date pattern per field)</label><textarea id="o-ff" rows="3" placeholder='{ "hire_date": "yyyy-MM-ddT..." }'></textarea></div>
+    </div>
+    <div>
+      <label>Value Objects (JSON — wrap scalar field values in nested objects)</label>
+      <textarea id="o-vo" rows="5" placeholder='{ "department": { "type": "Department", "attributes": { "id": 0, "name": "$" } } }'></textarea>
+    </div>
+  </div>
+
+  <!-- Input Tab -->
+  <div id="t-in" class="tp">
+    <h2>Example Request Body (paste JSON for create/update)</h2>
+    <textarea id="ex-req" placeholder="Paste the request body JSON sent to the target API here..."></textarea>
+    <div class="row-btns">
+      <button class="btn primary" onclick="analyzeRequest()">Analyze Request</button>
+      <button class="btn" onclick="document.getElementById('ex-req').value='';hideDetect('d-req')">Clear</button>
+    </div>
+    <div id="d-req" class="detect"></div>
+
+    <hr>
+    <h2>Input Field Mappings &nbsp;<span style="font-size:11px;color:var(--text-dim);font-weight:400;text-transform:none">(internal field → external API field name in request body)</span></h2>
+    <div id="in-maps"></div>
+    <div class="row-btns">
+      <button class="btn" onclick="addMap('in')">+ Add Row</button>
+      <button class="btn" onclick="resetInMaps()">Reset to Defaults</button>
+    </div>
+
+    <hr>
+    <h2>Input Options</h2>
+    <div class="g4" style="margin-bottom:10px">
+      <div><label>Item Key</label><input id="i-ik" placeholder="attributes"></div>
+      <div>
+        <label>Attribute Style</label>
+        <select id="i-as"><option value="">(none)</option><option value="labeled">labeled</option></select>
+      </div>
+    </div>
+    <div><label>Value Paths (JSON — extract nested value, e.g. {"department": "attributes.name"})</label>
+    <textarea id="i-vp" rows="3" placeholder='{ "department": "attributes.name" }'></textarea></div>
+  </div>
+</div>
+
+<!-- shared datalists, populated by JS -->
+<datalist id="dl-out"></datalist>
+<datalist id="dl-in"></datalist>
+
+<!-- ── Output ─────────────────────────────────────────── -->
+<div class="card">
+  <h2>Generated JSON</h2>
+  <div class="row-btns" style="margin-bottom:12px">
+    <button class="btn primary" onclick="generate(false)">Generate Route JSON</button>
+    <button class="btn" onclick="generate(true)">Wrap in Full Profile</button>
+  </div>
+  <textarea id="output" class="output-area" readonly placeholder="Generated JSON will appear here after clicking Generate..."></textarea>
+  <div class="row-btns">
+    <button class="btn success" onclick="copyOut()">Copy to Clipboard</button>
+    <span id="copy-ok" class="copy-ok">✓ Copied!</span>
+  </div>
+</div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────────────────
+const ACTION_META = {
+  list_users:       { m:'GET',    hint:'Returns paginated list of users' },
+  get_user:         { m:'GET',    hint:'Single user — path should end with /:id' },
+  create_user:      { m:'POST',   hint:'Creates a user from request body' },
+  update_user:      { m:'PUT',    hint:'Updates a user — path should end with /:id' },
+  delete_user:      { m:'DELETE', hint:'Deletes a user — path should end with /:id' },
+  enable_user:      { m:'POST',   hint:'Sets enabled=true on a user' },
+  disable_user:     { m:'POST',   hint:'Sets enabled=false on a user' },
+  set_user_field:   { m:'PUT',    hint:'Sets a specific field (e.g. manager) on a user' },
+  clear_user_field: { m:'DELETE', hint:'Clears a specific field on a user' },
+  list_groups:      { m:'GET',    hint:'Returns all distinct permissions as group objects' },
+  link_group:       { m:'POST',   hint:'Adds a user to a group — uses group_body_field or /:groupId in path' },
+  unlink_group:     { m:'DELETE', hint:'Removes a user from a group' },
+  list_persons:     { m:'GET',    hint:'Returns paginated list of persons' },
+  get_person:       { m:'GET',    hint:'Single person — path should end with /:id' },
+  create_person:    { m:'POST',   hint:'Creates a person from request body' },
+  update_person:    { m:'PUT',    hint:'Updates a person — path should end with /:id' },
+  delete_person:    { m:'DELETE', hint:'Deletes a person (cascades contracts)' },
+  list_contracts:   { m:'GET',    hint:'Lists contracts for a person — path should contain /:id' },
+  get_contract:     { m:'GET',    hint:'Single contract — path should contain /:id and /:contractId' },
+  create_contract:  { m:'POST',   hint:'Creates a contract under person /:id' },
+  update_contract:  { m:'PUT',    hint:'Updates a contract' },
+  delete_contract:  { m:'DELETE', hint:'Deletes a contract' },
+  issue_token:      { m:'POST',   hint:'Issues a real Bearer token embedded at token_field path in response' },
+  static:           { m:'GET',    hint:'Returns fixed status + optional body JSON. No store interaction.' },
+};
+
+const DOMAIN_FIELDS = {
+  user:     ['id','username','email','first_name','last_name','enabled','manager'],
+  person:   ['id','first_name','last_name','email','birthday','address.street','address.city','address.state','address.zip','address.country'],
+  contract: ['id','person_id','title','department','manager','company','start_date','end_date'],
+  group:    ['id','name'],
+};
+
+// Short external names used as defaults where internal name differs
+const DEFAULT_EXTERNAL = {
+  'address.street':  'street',
+  'address.city':    'city',
+  'address.state':   'state',
+  'address.zip':     'zip',
+  'address.country': 'country',
+};
+
+// Extra contract fields surfaced via merge_first_contract on person actions
+const PERSON_CONTRACT_DEFAULTS = [
+  {i:'contract.start_date', e:'hire_date'},
+  {i:'contract.end_date',   e:'contract_end_date'},
+  {i:'contract.department', e:'department'},
+  {i:'contract.title',      e:'position'},
+  {i:'contract.manager',    e:'supervisor'},
+  {i:'contract.company',    e:'company'},
+];
+
+const SYNONYMS = {
+  id:               ['id','employeeid','userid','guid','userguid','userguid','uuid','personid','staffid'],
+  username:         ['username','username','login','loginname','userprincipalname','upn','accountname'],
+  email:            ['email','mail','emailaddress','e_mail'],
+  first_name:       ['firstname','first_name','givenname','given_name','forename'],
+  last_name:        ['lastname','last_name','surname','familyname','family_name','sn'],
+  enabled:          ['enabled','active','isactive','is_active','isenabled','is_enabled'],
+  manager:          ['manager','managerid','manager_id','supervisorid','supervisor'],
+  birthday:         ['birthday','birthdate','birth_date','dateofbirth','date_of_birth','dob'],
+  title:            ['title','jobtitle','job_title','position','jobposition','role'],
+  department:       ['department','departmentname','dept','division'],
+  company:          ['company','companyname','company_name','organization','employer'],
+  start_date:       ['startdate','start_date','hiredate','hire_date','employmentstart'],
+  end_date:         ['enddate','end_date','terminationdate','termination_date','contractend','leavedate'],
+  person_id:        ['personid','person_id','employeeid','employee_id'],
+  'address.street': ['street','streetaddress','street_address','addressline1'],
+  'address.city':   ['city','town','locality'],
+  'address.state':  ['state','province','region','county'],
+  'address.zip':    ['zip','postalcode','postal_code','zipcode','postcode'],
+  'address.country':['country','countrycode','country_code','nation'],
+};
+
+// ── State ──────────────────────────────────────────────────────────────────────
+let outMaps = [];  // [{i: internal, e: external}]
+let inMaps  = [];
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+const getDomain = a =>
+  ['list_users','get_user','create_user','update_user','delete_user','enable_user','disable_user','set_user_field','clear_user_field'].includes(a) ? 'user' :
+  ['list_groups','link_group','unlink_group'].includes(a) ? 'group' :
+  ['list_persons','get_person','create_person','update_person','delete_person'].includes(a) ? 'person' :
+  ['list_contracts','get_contract','create_contract','update_contract','delete_contract'].includes(a) ? 'contract' : null;
+
+const isList   = a => a.startsWith('list_');
+const isDel    = a => a.startsWith('delete_') || a === 'unlink_group';
+const isMutate = a => ['create_user','update_user','create_person','update_person','create_contract','update_contract','link_group'].includes(a);
+
+function defaultMaps(action, skipId=false) {
+  const d = getDomain(action);
+  if (!d) return [];
+  const maps = (DOMAIN_FIELDS[d] || [])
+    .filter(f => !skipId || f !== 'id')
+    .map(f => ({i:f, e: DEFAULT_EXTERNAL[f] || f}));
+  // append contract.* fields for person read/list actions
+  if (['list_persons','get_person'].includes(action) && !skipId) {
+    maps.push(...PERSON_CONTRACT_DEFAULTS);
+  }
+  return maps;
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', onActionChange);
+
+function onActionChange() {
+  const a = document.getElementById('action').value;
+  const meta = ACTION_META[a] || {};
+  document.getElementById('method').value = meta.m || 'GET';
+  document.getElementById('action-hint').textContent = meta.hint || '';
+  document.getElementById('static-body-wrap').style.display = ['static','issue_token'].includes(a) ? 'block' : 'none';
+  document.getElementById('group-wrap').style.display = ['link_group','unlink_group'].includes(a) ? 'block' : 'none';
+  updateDatalist('out');
+  updateDatalist('in');
+  resetOutMaps();
+  resetInMaps();
+}
+
+// ── Mapping render ────────────────────────────────────────────────────────────
+function getKnownFields(action) {
+  const domain = getDomain(action);
+  const base = domain ? [...(DOMAIN_FIELDS[domain]||[])] : [];
+  if (['list_persons','get_person'].includes(action)) {
+    PERSON_CONTRACT_DEFAULTS.forEach(d => base.push(d.i));
+  }
+  return base;
+}
+
+function updateDatalist(pfx) {
+  const action = document.getElementById('action').value;
+  const fields = getKnownFields(action);
+  const dl = document.getElementById('dl-' + pfx);
+  // Group labels for display
+  const domain = getDomain(action);
+  const domBase = domain ? (DOMAIN_FIELDS[domain]||[]) : [];
+  const contractExtra = ['list_persons','get_person'].includes(action)
+    ? PERSON_CONTRACT_DEFAULTS.map(d=>d.i) : [];
+  dl.innerHTML = [
+    ...domBase.map(f => `<option value="${esc(f)}">`),
+    ...contractExtra.map(f => `<option value="${esc(f)}">`),
+  ].join('');
+}
+
+function defaultExternal(internalField) {
+  if (DEFAULT_EXTERNAL[internalField]) return DEFAULT_EXTERNAL[internalField];
+  const cd = PERSON_CONTRACT_DEFAULTS.find(d => d.i === internalField);
+  return cd ? cd.e : internalField;
+}
+
+function resetOutMaps() {
+  outMaps = defaultMaps(document.getElementById('action').value);
+  updateDatalist('out');
+  renderMaps('out-maps', outMaps, 'out');
+}
+function resetInMaps() {
+  inMaps = defaultMaps(document.getElementById('action').value, true);
+  updateDatalist('in');
+  renderMaps('in-maps', inMaps, 'in');
+}
+
+function renderMaps(cid, arr, pfx) {
+  const c = document.getElementById(cid);
+  c.innerHTML = arr.map((m,i) => `
+    <div class="mrow">
+      <input type="text" list="dl-${pfx}" id="ii-${pfx}-${i}"
+             value="${esc(m.i)}"
+             oninput="onIntInput('${pfx}',${i},this)"
+             placeholder="select or type internal field"
+             autocomplete="off">
+      <div class="arrow">→</div>
+      <input type="text" id="ei-${pfx}-${i}"
+             value="${esc(m.e)}"
+             oninput="updMap('${pfx}',${i},'e',this.value)"
+             placeholder="external field name">
+      <button class="xbtn" onclick="remMap('${pfx}',${i})" title="Remove">✕</button>
+    </div>`).join('');
+}
+
+function onIntInput(pfx, i, el) {
+  const v = el.value;
+  updMap(pfx, i, 'i', v);
+  // Auto-fill external if it's currently empty or was previously auto-filled
+  const extEl = document.getElementById(`ei-${pfx}-${i}`);
+  const arr = pfx==='out' ? outMaps : inMaps;
+  const prevExt = arr[i].e;
+  const knownFields = getKnownFields(document.getElementById('action').value);
+  if (knownFields.includes(v) && (!prevExt || prevExt === arr[i].i || prevExt === defaultExternal(arr[i].i))) {
+    const def = defaultExternal(v);
+    arr[i].e = def;
+    if (extEl) extEl.value = def;
+  }
+}
+
+function updMap(pfx,i,k,v) { (pfx==='out'?outMaps:inMaps)[i][k]=v; }
+function remMap(pfx,i) {
+  const arr = pfx==='out'?outMaps:inMaps;
+  arr.splice(i,1);
+  renderMaps(pfx==='out'?'out-maps':'in-maps', arr, pfx);
+}
+function addMap(pfx) {
+  (pfx==='out'?outMaps:inMaps).push({i:'',e:''});
+  updateDatalist(pfx);
+  renderMaps(pfx==='out'?'out-maps':'in-maps', pfx==='out'?outMaps:inMaps, pfx);
+}
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }
+
+// ── Date / value_object helpers ──────────────────────────────────────────────
+const DATE_PATTERNS = [
+  { re: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:?\d{2}$/, fmt: "yyyy-MM-dd'T'HH:mm:ssZ" },
+  { re: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/,                 fmt: "yyyy-MM-dd'T'HH:mm:ss'Z'" },
+  { re: /^\d{4}-\d{2}-\d{2}$/,                                     fmt: 'yyyy-MM-dd' },
+  { re: /^\d{2}\/\d{2}\/\d{4}$/,                                   fmt: 'MM/dd/yyyy' },
+];
+function detectDateFmt(v) {
+  if (typeof v !== 'string') return null;
+  for (const p of DATE_PATTERNS) if (p.re.test(v)) return p.fmt;
+  return null;
+}
+
+// Build a value_object template by replacing the "main value" with '$'
+// and resetting numeric id fields to 0.
+function buildTemplate(obj) {
+  const clone = JSON.parse(JSON.stringify(obj));
+  substituteMain(clone);
+  return clone;
+}
+function substituteMain(obj) {
+  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return false;
+  // A nested labeled object — replace .value with '$'
+  if ('value' in obj && typeof obj.value === 'string') { obj.value = '$'; return true; }
+  if ('value' in obj && typeof obj.value === 'number') { obj.value = '$'; return true; }
+  // Object with attributes.name string — replace name with '$', reset id
+  if (obj.attributes && typeof obj.attributes === 'object') {
+    if ('name' in obj.attributes && typeof obj.attributes.name === 'string') {
+      obj.attributes.name = '$';
+      if ('id' in obj.attributes && typeof obj.attributes.id === 'number') obj.attributes.id = 0;
+      return true;
+    }
+    if (substituteMain(obj.attributes)) return true;
+  }
+  // Generic recursion
+  for (const v of Object.values(obj)) {
+    if (v && typeof v === 'object' && !Array.isArray(v)) if (substituteMain(v)) return true;
+  }
+  return false;
+}
+
+// ── JSON analysis ─────────────────────────────────────────────────────────────
+function detectStruct(json) {
+  const r = {listKey:null, itemKey:null, labeled:false, raw:false, fields:{}};
+  if (Array.isArray(json)) {
+    r.raw = true;
+    if (json[0] && typeof json[0]==='object') extractFields(json[0], r);
+    return r;
+  }
+  if (typeof json !== 'object' || !json) return r;
+  let root = json;
+  // find list key
+  for (const [k,v] of Object.entries(root)) {
+    if (Array.isArray(v) && v.length > 0) { r.listKey = k; root = v; break; }
+  }
+  let item = Array.isArray(root) ? root[0] : root;
+  if (!item || typeof item !== 'object') return r;
+  // detect item_key: object with few keys one of which is a sub-object with many fields
+  const ks = Object.keys(item);
+  for (const k of ks) {
+    if (typeof item[k]==='object' && !Array.isArray(item[k]) && item[k]) {
+      if (Object.keys(item[k]).length > 2) { r.itemKey = k; item = item[k]; break; }
+    }
+  }
+  extractFields(item, r);
+  return r;
+}
+
+function extractFields(item, r) {
+  r.valueObjects = r.valueObjects || {};
+  r.dateFields   = r.dateFields   || {};
+  for (const [k,v] of Object.entries(item)) {
+    if (v && typeof v==='object' && !Array.isArray(v) && 'value' in v && ('label' in v || 'type' in v)) {
+      r.labeled = true;
+      const inner = v.value;
+      if (inner && typeof inner === 'object' && !Array.isArray(inner)) {
+        // Labeled field whose value is a complex object → build value_object template
+        r.valueObjects[k] = buildTemplate(JSON.parse(JSON.stringify(inner)));
+        r.fields[k] = inner;
+      } else {
+        r.fields[k] = inner;
+        const fmt = detectDateFmt(inner);
+        if (fmt) r.dateFields[k] = fmt;
+      }
+    } else if (typeof v !== 'object' || v===null) {
+      r.fields[k] = v;
+      const fmt = detectDateFmt(v);
+      if (fmt) r.dateFields[k] = fmt;
+    } else {
+      r.fields[k] = v;
+    }
+  }
+}
+
+function suggestFromFields(fields, action) {
+  const domain = getDomain(action);
+  const domFields = domain ? (DOMAIN_FIELDS[domain]||[]) : [];
+  const result = {};
+  const extKeys = Object.keys(fields);
+  for (const ext of extKeys) {
+    const lc = ext.toLowerCase();
+    for (const [int, syns] of Object.entries(SYNONYMS)) {
+      if (domFields.includes(int) && syns.includes(lc)) { result[int] = ext; break; }
+    }
+  }
+  for (const f of domFields) { if (!result[f]) result[f] = DEFAULT_EXTERNAL[f] || f; }
+  // for person list/get, also try to match contract.* fields from the detected external keys
+  if (['list_persons','get_person'].includes(action)) {
+    for (const def of PERSON_CONTRACT_DEFAULTS) {
+      if (!result[def.i]) {
+        // check if external example has a field matching the default external name
+        const found = extKeys.find(k => k.toLowerCase() === def.e.toLowerCase());
+        result[def.i] = found || def.e;
+      }
+    }
+  }
+  return result;
+}
+
+function analyzeResponse() {
+  const raw = document.getElementById('ex-resp').value.trim();
+  if (!raw) return;
+  let json; try { json=JSON.parse(raw); } catch(e){ showDetect('d-resp',`<span class="e">❌ Invalid JSON: ${e.message}</span>`); return; }
+  const s = detectStruct(json);
+  if (s.listKey)  document.getElementById('o-lk').value = s.listKey;
+  if (s.itemKey)  document.getElementById('o-ik').value = s.itemKey;
+  if (s.labeled)  document.getElementById('o-as').value = 'labeled';
+  if (s.raw)      document.getElementById('o-raw').value = 'true';
+  const lines = [];
+  if (s.raw)    lines.push(`<div><span class="k">structure:</span> <span class="v">raw array</span></div>`);
+  if (s.listKey) lines.push(`<div><span class="k">list_key:</span> <span class="v">"${s.listKey}"</span></div>`);
+  if (s.itemKey) lines.push(`<div><span class="k">item_key:</span> <span class="v">"${s.itemKey}"</span></div>`);
+  if (s.labeled) lines.push(`<div><span class="k">attribute_style:</span> <span class="v">"labeled"</span></div>`);
+  const fks = Object.keys(s.fields);
+  if (fks.length) lines.push(`<div><span class="k">fields found:</span> <span class="v">${fks.slice(0,12).join(', ')}${fks.length>12?' …':''}</span></div>`);
+  const dfks = Object.keys(s.dateFields||{});
+  if (dfks.length) lines.push(`<div><span class="k">date fields:</span> <span class="v">${dfks.join(', ')}</span></div>`);
+  const voks = Object.keys(s.valueObjects||{});
+  if (voks.length) lines.push(`<div><span class="k">value_objects:</span> <span class="v">${voks.join(', ')}</span></div>`);
+  showDetect('d-resp', lines.join(''));
+  if (fks.length) {
+    const sug = suggestFromFields(s.fields, document.getElementById('action').value);
+    outMaps = Object.entries(sug).map(([i,e])=>({i,e}));
+    renderMaps('out-maps', outMaps, 'out');
+  }
+  if (dfks.length) {
+    document.getElementById('o-ff').value = JSON.stringify(s.dateFields, null, 2);
+  }
+  if (voks.length) {
+    document.getElementById('o-vo').value = JSON.stringify(s.valueObjects, null, 2);
+  }
+}
+
+function analyzeRequest() {
+  const raw = document.getElementById('ex-req').value.trim();
+  if (!raw) return;
+  let json; try { json=JSON.parse(raw); } catch(e){ showDetect('d-req',`<span class="e">❌ Invalid JSON: ${e.message}</span>`); return; }
+  const s = detectStruct(json);
+  if (s.itemKey)  document.getElementById('i-ik').value = s.itemKey;
+  if (s.labeled)  document.getElementById('i-as').value = 'labeled';
+  const lines = [];
+  if (s.itemKey) lines.push(`<div><span class="k">item_key:</span> <span class="v">"${s.itemKey}"</span></div>`);
+  if (s.labeled) lines.push(`<div><span class="k">attribute_style:</span> <span class="v">"labeled"</span></div>`);
+  const fks = Object.keys(s.fields);
+  if (fks.length) lines.push(`<div><span class="k">fields found:</span> <span class="v">${fks.slice(0,12).join(', ')}${fks.length>12?' …':''}</span></div>`);
+  showDetect('d-req', lines.join(''));
+  if (fks.length) {
+    const sug = suggestFromFields(s.fields, document.getElementById('action').value);
+    inMaps = Object.entries(sug).filter(([i])=>i!=='id').map(([i,e])=>({i,e}));
+    renderMaps('in-maps', inMaps, 'in');
+  }
+}
+
+function showDetect(id, html) { const el=document.getElementById(id); el.innerHTML=html; el.classList.add('show'); }
+function hideDetect(id) { document.getElementById(id).classList.remove('show'); }
+
+// ── Generate ──────────────────────────────────────────────────────────────────
+function val(id){ return document.getElementById(id).value.trim(); }
+function tryJSON(s){ if(!s) return null; try{return JSON.parse(s);}catch{return null;} }
+
+function buildRoute() {
+  const action = val('action');
+  const route = { method: val('method'), path: val('path'), action };
+  const st = parseInt(val('status'))||200;
+  if (st !== 200) route.status = st;
+  if (val('lookup_field')) route.lookup_field = val('lookup_field');
+  if (val('chain_field'))  route.chain_field  = val('chain_field');
+  if (val('limiter'))      route.limiter      = val('limiter');
+  if (val('token_field'))  route.token_field  = val('token_field');
+
+  if (['static','issue_token'].includes(action)) {
+    const b = tryJSON(val('static_body'));
+    if (b) route.body = b;
+    return route;
+  }
+
+  if (['link_group','unlink_group'].includes(action)) {
+    if (val('group_body_field')) route.group_body_field = val('group_body_field');
+    if (val('user_body_extract')) route.user_body_extract = val('user_body_extract');
+    return route;
+  }
+
+  // Output
+  if (!isDel(action)) {
+    const out = {};
+    if (val('o-lk')) out.list_key  = val('o-lk');
+    if (val('o-ik')) out.item_key  = val('o-ik');
+    if (val('o-as')) out.attribute_style = val('o-as');
+    if (val('o-raw')==='true') out.raw = true;
+    if (val('o-mfc')) out.merge_first_contract = val('o-mfc');
+    const le=tryJSON(val('o-le')); if(le) out.list_extra=le;
+    const ie=tryJSON(val('o-ie')); if(ie) out.item_extra=ie;
+    const ff=tryJSON(val('o-ff')); if(ff) out.field_formats=ff;
+    const vo=tryJSON(val('o-vo')); if(vo) out.value_objects=vo;
+    const fm={};
+    outMaps.forEach(m=>{ if(m.i&&m.e) fm[m.i]=m.e; });
+    if (Object.keys(fm).length) out.field_map = fm;
+    if (Object.keys(out).length) route.output = out;
+  }
+
+  // Input
+  if (isMutate(action) && inMaps.some(m=>m.i&&m.e)) {
+    const inp = {};
+    if (val('i-ik')) inp.item_key = val('i-ik');
+    if (val('i-as')) inp.attribute_style = val('i-as');
+    const vp=tryJSON(val('i-vp')); if(vp) inp.value_paths=vp;
+    const fm={};
+    inMaps.forEach(m=>{ if(m.i&&m.e) fm[m.i]=m.e; });
+    if (Object.keys(fm).length) inp.field_map = fm;
+    if (Object.keys(inp).length) route.input = inp;
+  }
+
+  return route;
+}
+
+function generate(wrap) {
+  const route = buildRoute();
+  if (wrap) {
+    const name = val('path').replace(/^\/+/,'').replace(/\//g,'_').replace(/:/g,'').replace(/_+/g,'_').replace(/_$/,'') || 'my_profile';
+    document.getElementById('output').value = JSON.stringify({name, routes:[route]}, null, 2);
+  } else {
+    document.getElementById('output').value = JSON.stringify(route, null, 2);
+  }
+}
+
+function copyOut() {
+  const t = document.getElementById('output').value;
+  if (!t) return;
+  navigator.clipboard.writeText(t).then(()=>{
+    const el=document.getElementById('copy-ok');
+    el.classList.add('show');
+    setTimeout(()=>el.classList.remove('show'), 2000);
+  });
+}
+
+function switchTab(panelId, tabEl) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tp').forEach(p=>p.classList.remove('active'));
+  tabEl.classList.add('active');
+  document.getElementById(panelId).classList.add('active');
+}
+</script>
+</body>
+</html>

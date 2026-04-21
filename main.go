@@ -56,6 +56,7 @@ func main() {
 	// ---- unauthenticated ----
 	r.GET("/health", func(c *gin.Context) { c.JSON(200, gin.H{"status": "ok"}) })
 	r.GET("/docs", func(c *gin.Context) { c.File("docs.html") })
+	r.GET("/profile-builder", func(c *gin.Context) { c.File("profile_helper.html") })
 	r.POST("/oauth/token", auth.TokenHandler)
 	r.GET("/soap", soap.WSDLHandler)
 
