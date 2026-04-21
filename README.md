@@ -5,6 +5,7 @@ A feature-rich REST and SOAP test API server written in Go using the [Gin](https
 ## Features
 
 - REST API for **Users**, **Persons**, and **Contracts**
+- **Profile system** — expose the internal store under any external API shape (Entra ID, HelloID, Personio, …)
 - **SOAP** endpoint with WSDL
 - **OAuth2** client credentials flow + **Basic Auth** + optional **OpenID Connect SSO**
 - **JSON and XML** content negotiation (request and response)
@@ -313,6 +314,54 @@ When `seed_data: true`, the server populates demo data on startup (only if the s
 **Users:** alice (read + write), bob (read), charlie (disabled)
 
 **Persons/Contracts:** John Doe — Senior Developer at Acme Corp; Mary Johnson — Marketing Lead then Sales Manager at Globex
+
+---
+
+## Profile System
+
+A profile file remaps go_testapi's internal store to look like a completely different API — different paths, field names, HTTP status codes, and response envelopes. The goal is to run real connector scripts (e.g. HelloID, Entra ID, Personio) unchanged against the local server by only changing the base domain.
+
+### Enabling a profile
+
+Set `profile_path` in `config.json`:
+
+```json
+{ "profile_path": "./profiles/helloid.json" }
+```
+
+Bundled profiles:
+
+| File | Mimics |
+|------|--------|
+| `profiles/helloid.json` | HelloID (Tools4ever) REST API |
+| `profiles/entra.json` | Microsoft Graph / Entra ID |
+| `profiles/personio.json` | Personio HR API |
+
+### How it works
+
+A profile is a JSON file with a flat list of `routes`. Each route maps one external endpoint to one internal action:
+
+```json
+{
+  "name": "helloid",
+  "routes": [
+    {
+      "method": "GET",
+      "path":   "/users/:id",
+      "action": "get_user",
+      "lookup_field": "username",
+      "output": {
+        "field_map": { "id": "userGUID", "username": "userName", "enabled": "isEnabled" },
+        "item_extra": { "userAttributes": {}, "managedByUserGUID": null }
+      }
+    }
+  ]
+}
+```
+
+Available actions: `list_users`, `get_user`, `create_user`, `update_user`, `delete_user`, `enable_user`, `disable_user`, `list_groups`, `link_group`, `unlink_group`, `list_persons`, `get_person`, `create_person`, `update_person`, `delete_person`, `list_contracts`, `get_contract`, `create_contract`, `update_contract`, `delete_contract`, `issue_token`, `static`.
+
+See **[profiles/GUIDE.md](profiles/GUIDE.md)** for the full reference — all route fields, input/output mapping options, date formatting, type conversions, and worked examples for each API style.
 
 ---
 

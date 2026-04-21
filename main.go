@@ -36,6 +36,11 @@ func main() {
 		log.Fatalf("OIDC init: %v", err)
 	}
 
+	profile, profileErr := LoadProfile(cfg.ProfilePath)
+	if profileErr != nil {
+		log.Fatalf("profile: %v", profileErr)
+	}
+
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 
@@ -90,6 +95,11 @@ func main() {
 
 	// ---- authenticated SOAP ----
 	r.POST("/soap", auth.Middleware(), soap.Handler)
+
+	// ---- profile mock routes (optional) ----
+	if profile != nil {
+		RegisterProfileRoutes(r, profile, auth, userLimiter, personLimiter, store, personStore)
+	}
 
 	printBanner(cfg)
 	r.Run(fmt.Sprintf(":%d", cfg.Port)) //nolint:errcheck

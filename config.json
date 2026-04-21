@@ -9,6 +9,7 @@
   "token_expiry_s": 3600,
 
   "seed_data": true,
+  "profile_path": "",
 
   "oidc": {
     "discovery_url":               "",

@@ -1,0 +1,40 @@
+[
+  {
+    "id": "9169ac6264b04b8f",
+    "username": "charlie",
+    "email": "charlie@example.com",
+    "first_name": "Charlie",
+    "last_name": "Brown",
+    "enabled": false,
+    "permissions": [],
+    "created_at": "2026-04-20T23:01:34.2171776+02:00",
+    "updated_at": "2026-04-20T23:01:34.2171776+02:00"
+  },
+  {
+    "id": "81a383974540af2c",
+    "username": "alice",
+    "email": "alice@example.com",
+    "first_name": "Alice",
+    "last_name": "Smith",
+    "enabled": true,
+    "permissions": [
+      "read",
+      "write"
+    ],
+    "created_at": "2026-04-20T23:01:34.2171776+02:00",
+    "updated_at": "2026-04-20T23:01:34.2171776+02:00"
+  },
+  {
+    "id": "21e128dc8b549c79",
+    "username": "bob",
+    "email": "bob@example.com",
+    "first_name": "Bob",
+    "last_name": "Jones",
+    "enabled": true,
+    "permissions": [
+      "read"
+    ],
+    "created_at": "2026-04-20T23:01:34.2171776+02:00",
+    "updated_at": "2026-04-20T23:01:34.2171776+02:00"
+  }
+]

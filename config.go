@@ -99,6 +99,9 @@ type Config struct {
 	RateLimit   RateLimitConfig  `json:"rate_limit"`
 	Pagination  PaginationConfig `json:"pagination"`
 	OIDC        OIDCConfig       `json:"oidc"`
+	// ProfilePath is the path to a profile JSON file that adds alternative
+	// endpoints shaped like another API (e.g. Personio, Entra). Leave empty to disable.
+	ProfilePath string `json:"profile_path"`
 }
 
 func defaultConfig() Config {

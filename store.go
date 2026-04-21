@@ -20,6 +20,7 @@ type User struct {
 	FirstName   string    `json:"first_name"   xml:"FirstName"`
 	LastName    string    `json:"last_name"    xml:"LastName"`
 	Enabled     bool      `json:"enabled"      xml:"Enabled"`
+	Manager     string    `json:"manager"      xml:"Manager"`
 	Permissions []string  `json:"permissions"  xml:"Permissions>Permission,omitempty"`
 	CreatedAt   time.Time `json:"created_at"   xml:"CreatedAt"`
 	UpdatedAt   time.Time `json:"updated_at"   xml:"UpdatedAt"`
@@ -181,6 +182,9 @@ func (s *Store) Update(id string, patch User) (User, error) {
 	if patch.LastName != "" {
 		u.LastName = patch.LastName
 	}
+	if patch.Manager != "" {
+		u.Manager = patch.Manager
+	}
 	u.UpdatedAt = time.Now()
 	s.persist()
 	return *u, nil
@@ -195,6 +199,20 @@ func (s *Store) SetEnabled(id string, enabled bool) (User, error) {
 		return User{}, ErrNotFound
 	}
 	u.Enabled = enabled
+	u.UpdatedAt = time.Now()
+	s.persist()
+	return *u, nil
+}
+
+// SetManager sets (or clears) the manager field on a user.
+func (s *Store) SetManager(id, managerID string) (User, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	u, ok := s.users[id]
+	if !ok {
+		return User{}, ErrNotFound
+	}
+	u.Manager = managerID
 	u.UpdatedAt = time.Now()
 	s.persist()
 	return *u, nil

@@ -67,6 +67,17 @@
     "skip_signature_verification": false
   },
 
+  "profile_path": "",
+  "_comment_profile": [
+    "Optional path to a profile JSON file that adds alternative endpoints shaped like another API.",
+    "Leave empty to disable. Example profiles are in the profiles/ directory:",
+    "  profiles/personio.json  — Personio HR API (/api/v1/company/employees, ...)",
+    "  profiles/entra.json     — Microsoft Graph / Entra ID (/v1.0/users, /v1.0/contacts, ...)",
+    "All profile endpoints require the same authentication as the regular API.",
+    "attribute_style: 'labeled' wraps each field as {label, value, type} (Personio-style).",
+    "attribute_style: '' or 'flat' uses plain field renaming (default, used by Entra profile)."
+  ],
+
   "pagination": {
     "_comment": [
       "Controls paging for list endpoints (/api/users, /api/persons, /api/contracts, etc.).",

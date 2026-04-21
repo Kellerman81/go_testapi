@@ -1,0 +1,106 @@
+{
+  "_comment": [
+    "Maps HelloID (Tools4ever) REST API endpoints to go_testapi's internal store.",
+    "Set your connector's base URL to http://<host> and leave all script logic unchanged.",
+    "",
+    "Auth:  Basic base64(client_id:secret)",
+    "Base:  http://<host>",
+    "",
+    "lookup_field on get_user allows initial correlation by userName before the GUID is known.",
+    "take_param / skip_param support the connector's paging parameters."
+  ],
+
+  "name": "helloid",
+  "routes": [
+    {
+      "method": "GET",
+      "path":   "/users",
+      "action": "list_users",
+      "output": {
+        "raw": true,
+        "field_map": {
+          "id":         "userGUID",
+          "username":   "userName",
+          "enabled":    "isEnabled",
+          "email":      "emailAddress",
+          "first_name": "firstName",
+          "last_name":  "lastName"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path":        "/users/:id",
+      "action":      "get_user",
+      "lookup_field": "username",
+      "output": {
+        "item_extra": { "userAttributes": {}, "managedByUserGUID": null },
+        "field_map": {
+          "id":         "userGUID",
+          "username":   "userName",
+          "enabled":    "isEnabled",
+          "email":      "emailAddress",
+          "first_name": "firstName",
+          "last_name":  "lastName"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path":   "/users",
+      "action": "create_user",
+      "input": {
+        "field_map": {
+          "id":         "userGUID",
+          "username":   "userName",
+          "enabled":    "isEnabled",
+          "email":      "emailAddress",
+          "first_name": "firstName",
+          "last_name":  "lastName"
+        }
+      },
+      "output": {
+        "item_extra": { "userAttributes": {}, "managedByUserGUID": null },
+        "field_map": {
+          "id":         "userGUID",
+          "username":   "userName",
+          "enabled":    "isEnabled",
+          "email":      "emailAddress",
+          "first_name": "firstName",
+          "last_name":  "lastName"
+        }
+      }
+    },
+    {
+      "method": "PUT",
+      "path":   "/users/:id",
+      "action": "update_user",
+      "input": {
+        "field_map": {
+          "id":         "userGUID",
+          "username":   "userName",
+          "enabled":    "isEnabled",
+          "email":      "emailAddress",
+          "first_name": "firstName",
+          "last_name":  "lastName"
+        }
+      },
+      "output": {
+        "item_extra": { "userAttributes": {}, "managedByUserGUID": null },
+        "field_map": {
+          "id":         "userGUID",
+          "username":   "userName",
+          "enabled":    "isEnabled",
+          "email":      "emailAddress",
+          "first_name": "firstName",
+          "last_name":  "lastName"
+        }
+      }
+    },
+    {
+      "method": "DELETE",
+      "path":   "/users/:id",
+      "action": "delete_user"
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "persons": [
+    {
+      "id": "efc6c1ab2b7e278b",
+      "first_name": "John",
+      "last_name": "Doe",
+      "birthday": "1985-03-12",
+      "address": {
+        "street": "123 Main St",
+        "city": "Springfield",
+        "state": "IL",
+        "zip": "62701",
+        "country": "US"
+      },
+      "phones": [
+        "+1-555-0100",
+        "+1-555-0101"
+      ],
+      "created_at": "2026-04-20T23:01:34.2662054+02:00",
+      "updated_at": "2026-04-20T23:01:34.2662054+02:00"
+    },
+    {
+      "id": "32b372388432da97",
+      "first_name": "Mary",
+      "last_name": "Johnson",
+      "birthday": "1990-07-24",
+      "address": {
+        "street": "45 Oak Ave",
+        "city": "Shelbyville",
+        "state": "IL",
+        "zip": "62565",
+        "country": "US"
+      },
+      "phones": [
+        "+1-555-0200"
+      ],
+      "created_at": "2026-04-20T23:01:34.2662054+02:00",
+      "updated_at": "2026-04-20T23:01:34.2662054+02:00"
+    }
+  ],
+  "contracts": [
+    {
+      "id": "ddae603bfe8d75c9",
+      "person_id": "efc6c1ab2b7e278b",
+      "manager": "Jane Smith",
+      "department": "Engineering",
+      "company": "Acme Corp",
+      "title": "Senior Developer",
+      "start_date": "2020-01-15",
+      "end_date": "",
+      "created_at": "2026-04-20T23:01:34.2662054+02:00",
+      "updated_at": "2026-04-20T23:01:34.2662054+02:00"
+    },
+    {
+      "id": "8a8b2d789ac5e1ef",
+      "person_id": "32b372388432da97",
+      "manager": "Bob Brown",
+      "department": "Marketing",
+      "company": "Globex",
+      "title": "Marketing Lead",
+      "start_date": "2019-06-01",
+      "end_date": "2022-12-31",
+      "created_at": "2026-04-20T23:01:34.2662054+02:00",
+      "updated_at": "2026-04-20T23:01:34.2662054+02:00"
+    },
+    {
+      "id": "1d2e056d02bc2d78",
+      "person_id": "32b372388432da97",
+      "manager": "Alice Green",
+      "department": "Sales",
+      "company": "Globex",
+      "title": "Sales Manager",
+      "start_date": "2023-01-01",
+      "end_date": "",
+      "created_at": "2026-04-20T23:01:34.2662054+02:00",
+      "updated_at": "2026-04-20T23:01:34.2662054+02:00"
+    }
+  ]
+}

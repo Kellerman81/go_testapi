@@ -1,0 +1,160 @@
+{
+  "_comment": [
+    "Maps Microsoft Graph / Entra ID endpoints to go_testapi's internal store.",
+    "Set your connector's Graph base URL to http://<host> and leave all script logic unchanged.",
+    "",
+    "Token:  POST http://<host>/oauth/token  (grant_type=client_credentials)",
+    "Base:   http://<host>",
+    "",
+    "Actions reference:",
+    "  list_users   — GET  all users; supports $filter=field eq 'value'",
+    "  get_user     — GET  single user by id",
+    "  create_user  — POST create user",
+    "  update_user  — PATCH/PUT update user fields incl. accountEnabled",
+    "  delete_user  — DELETE user",
+    "  list_groups  — GET  all groups (derived from user permissions)",
+    "  link_group   — POST add user to group via @odata.id body",
+    "  unlink_group — DELETE remove user from group",
+    "  static       — return a fixed status (no-op endpoints)"
+  ],
+
+  "name": "entra",
+  "routes": [
+    {
+      "method": "GET",
+      "path":   "/v1.0/users",
+      "action": "list_users",
+      "output": {
+        "list_key":   "value",
+        "list_extra": { "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#users" },
+        "field_map": {
+          "id":         "id",
+          "username":   "userPrincipalName",
+          "email":      "mail",
+          "first_name": "givenName",
+          "last_name":  "surname",
+          "enabled":    "accountEnabled"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path":   "/v1.0/users",
+      "action": "create_user",
+      "input": {
+        "field_map": {
+          "id":         "id",
+          "username":   "userPrincipalName",
+          "email":      "mail",
+          "first_name": "givenName",
+          "last_name":  "surname",
+          "enabled":    "accountEnabled"
+        }
+      },
+      "output": {
+        "field_map": {
+          "id":         "id",
+          "username":   "userPrincipalName",
+          "email":      "mail",
+          "first_name": "givenName",
+          "last_name":  "surname",
+          "enabled":    "accountEnabled"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path":   "/v1.0/users/:id",
+      "action": "get_user",
+      "output": {
+        "field_map": {
+          "id":         "id",
+          "username":   "userPrincipalName",
+          "email":      "mail",
+          "first_name": "givenName",
+          "last_name":  "surname",
+          "enabled":    "accountEnabled"
+        }
+      }
+    },
+    {
+      "method": "PATCH",
+      "path":   "/v1.0/users/:id",
+      "action": "update_user",
+      "status": 204,
+      "input": {
+        "field_map": {
+          "id":         "id",
+          "username":   "userPrincipalName",
+          "email":      "mail",
+          "first_name": "givenName",
+          "last_name":  "surname",
+          "enabled":    "accountEnabled"
+        }
+      }
+    },
+    {
+      "method": "DELETE",
+      "path":   "/v1.0/users/:id",
+      "action": "delete_user",
+      "status": 204
+    },
+    {
+      "method": "GET",
+      "path":   "/v1.0/users/:id/manager",
+      "action": "get_user",
+      "chain_field": "manager",
+      "output": {
+        "field_map": {
+          "id":         "id",
+          "username":   "userPrincipalName",
+          "email":      "mail",
+          "first_name": "givenName",
+          "last_name":  "surname",
+          "enabled":    "accountEnabled"
+        }
+      }
+    },
+    {
+      "method": "PUT",
+      "path":             "/v1.0/users/:id/manager/$ref",
+      "action":           "set_user_field",
+      "target_field":     "manager",
+      "user_body_field":  "@odata.id",
+      "user_body_extract": "last_path_segment",
+      "status": 204
+    },
+    {
+      "method": "DELETE",
+      "path":         "/v1.0/users/:id/manager/$ref",
+      "action":       "clear_user_field",
+      "target_field": "manager",
+      "status": 204
+    },
+    {
+      "method": "GET",
+      "path":   "/v1.0/groups",
+      "action": "list_groups",
+      "output": {
+        "list_key":   "value",
+        "list_extra": { "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#groups" },
+        "id_field":   "id",
+        "name_field": "displayName"
+      }
+    },
+    {
+      "method": "POST",
+      "path":   "/v1.0/groups/:groupId/members/$ref",
+      "action": "link_group",
+      "user_body_field":   "@odata.id",
+      "user_body_extract": "last_path_segment",
+      "status": 204
+    },
+    {
+      "method": "DELETE",
+      "path":   "/v1.0/groups/:groupId/members/:userId/$ref",
+      "action": "unlink_group",
+      "status": 204
+    }
+  ]
+}

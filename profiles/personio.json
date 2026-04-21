@@ -1,0 +1,192 @@
+{
+  "_comment": "Maps Personio HR API endpoints to go_testapi's internal person/contract store.",
+
+  "name": "personio",
+  "routes": [
+    {
+      "method": "POST",
+      "path":   "/v1/auth",
+      "action": "issue_token",
+      "token_field": "data.token",
+      "body": { "success": true, "data": {} }
+    },
+    {
+      "method": "GET",
+      "path":   "/v1/company/employees",
+      "action": "list_persons",
+      "limiter": "person",
+      "output": {
+        "list_key":   "data",
+        "list_extra": { "success": true },
+        "item_key":   "attributes",
+        "item_extra": { "type": "Employee" },
+        "attribute_style": "labeled",
+        "field_map": {
+          "id":              "id",
+          "first_name":      "first_name",
+          "last_name":       "last_name",
+          "birthday":        "hire_date",
+          "address.street":  "street",
+          "address.city":    "city",
+          "address.state":   "state",
+          "address.zip":     "zip",
+          "address.country": "country"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path":   "/v1/company/employees/:id",
+      "action": "get_person",
+      "limiter": "person",
+      "output": {
+        "item_key":   "attributes",
+        "item_extra": { "type": "Employee" },
+        "attribute_style": "labeled",
+        "field_map": {
+          "id":              "id",
+          "first_name":      "first_name",
+          "last_name":       "last_name",
+          "birthday":        "hire_date",
+          "address.street":  "street",
+          "address.city":    "city",
+          "address.state":   "state",
+          "address.zip":     "zip",
+          "address.country": "country"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path":   "/v1/company/employees",
+      "action": "create_person",
+      "limiter": "person",
+      "input": {
+        "item_key": "attributes",
+        "attribute_style": "labeled",
+        "field_map": {
+          "id":              "id",
+          "first_name":      "first_name",
+          "last_name":       "last_name",
+          "birthday":        "hire_date",
+          "address.street":  "street",
+          "address.city":    "city",
+          "address.state":   "state",
+          "address.zip":     "zip",
+          "address.country": "country"
+        }
+      },
+      "output": {
+        "item_key":   "attributes",
+        "item_extra": { "type": "Employee" },
+        "attribute_style": "labeled",
+        "field_map": {
+          "id":              "id",
+          "first_name":      "first_name",
+          "last_name":       "last_name",
+          "birthday":        "hire_date",
+          "address.street":  "street",
+          "address.city":    "city",
+          "address.state":   "state",
+          "address.zip":     "zip",
+          "address.country": "country"
+        }
+      }
+    },
+    {
+      "method": "PUT",
+      "path":   "/v1/company/employees/:id",
+      "action": "update_person",
+      "limiter": "person",
+      "input": {
+        "item_key": "attributes",
+        "attribute_style": "labeled",
+        "field_map": {
+          "id":              "id",
+          "first_name":      "first_name",
+          "last_name":       "last_name",
+          "birthday":        "hire_date",
+          "address.street":  "street",
+          "address.city":    "city",
+          "address.state":   "state",
+          "address.zip":     "zip",
+          "address.country": "country"
+        }
+      },
+      "output": {
+        "item_key":   "attributes",
+        "item_extra": { "type": "Employee" },
+        "attribute_style": "labeled",
+        "field_map": {
+          "id":              "id",
+          "first_name":      "first_name",
+          "last_name":       "last_name",
+          "birthday":        "hire_date",
+          "address.street":  "street",
+          "address.city":    "city",
+          "address.state":   "state",
+          "address.zip":     "zip",
+          "address.country": "country"
+        }
+      }
+    },
+    {
+      "method": "DELETE",
+      "path":   "/v1/company/employees/:id",
+      "action": "delete_person",
+      "limiter": "person"
+    },
+    {
+      "method": "GET",
+      "path":   "/v1/company/employees/:id/contracts",
+      "action": "list_contracts",
+      "limiter": "person",
+      "output": {
+        "list_key":   "data",
+        "list_extra": { "success": true },
+        "item_key":   "attributes",
+        "item_extra": { "type": "Contract" },
+        "attribute_style": "labeled",
+        "field_map": {
+          "id":         "id",
+          "person_id":  "employee_id",
+          "company":    "company",
+          "title":      "position",
+          "department": "department",
+          "manager":    "supervisor",
+          "start_date": "start_date",
+          "end_date":   "end_date"
+        },
+        "field_formats": {
+          "start_date": "yyyy-MM-dd'T'HH:mm:ssZ",
+          "end_date":   "yyyy-MM-dd'T'HH:mm:ssZ"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path":   "/v1/company/employees/:id/contracts/:contractId",
+      "action": "get_contract",
+      "limiter": "person",
+      "output": {
+        "item_key":   "attributes",
+        "item_extra": { "type": "Contract" },
+        "attribute_style": "labeled",
+        "field_map": {
+          "id":         "id",
+          "person_id":  "employee_id",
+          "company":    "company",
+          "title":      "position",
+          "department": "department",
+          "manager":    "supervisor",
+          "start_date": "start_date",
+          "end_date":   "end_date"
+        },
+        "field_formats": {
+          "start_date": "yyyy-MM-dd'T'HH:mm:ssZ",
+          "end_date":   "yyyy-MM-dd'T'HH:mm:ssZ"
+        }
+      }
+    }
+  ]
+}
