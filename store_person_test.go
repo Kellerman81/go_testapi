@@ -9,7 +9,7 @@ import (
 
 // newTestPersonStore returns a memory-backed person store with no seed data.
 func newTestPersonStore() *PersonStore {
-	return NewPersonStore("")
+	return NewPersonStore("", nil, nil)
 }
 
 // makePerson is a test helper that creates a person and fatals on error.
@@ -360,7 +360,7 @@ func TestPersonStore_DeleteContract_NotFound(t *testing.T) {
 func TestPersonStore_FilePersistence_RoundTrip(t *testing.T) {
 	dir := t.TempDir()
 
-	store1 := NewPersonStore(dir)
+	store1 := NewPersonStore(dir, nil, nil)
 	p, _ := store1.CreatePerson(Person{
 		FirstName: "Rita",
 		LastName:  "Blue",
@@ -378,7 +378,7 @@ func TestPersonStore_FilePersistence_RoundTrip(t *testing.T) {
 	}
 
 	// Reload from disk
-	store2 := NewPersonStore(dir)
+	store2 := NewPersonStore(dir, nil, nil)
 
 	loadedP, err := store2.GetPerson(p.ID)
 	if err != nil {
@@ -403,11 +403,11 @@ func TestPersonStore_FilePersistence_RoundTrip(t *testing.T) {
 func TestPersonStore_FilePersistence_DeleteSurvidesReload(t *testing.T) {
 	dir := t.TempDir()
 
-	store1 := NewPersonStore(dir)
+	store1 := NewPersonStore(dir, nil, nil)
 	p := makePerson(t, store1, "Sam", "Orange")
 	store1.DeletePerson(p.ID)
 
-	store2 := NewPersonStore(dir)
+	store2 := NewPersonStore(dir, nil, nil)
 	if _, err := store2.GetPerson(p.ID); err != ErrNotFound {
 		t.Fatalf("deleted person reappeared after reload: %v", err)
 	}
@@ -416,10 +416,10 @@ func TestPersonStore_FilePersistence_DeleteSurvidesReload(t *testing.T) {
 func TestPersonStore_FilePersistence_SeedSkippedWhenDataExists(t *testing.T) {
 	dir := t.TempDir()
 
-	store1 := NewPersonStore(dir)
+	store1 := NewPersonStore(dir, nil, nil)
 	store1.CreatePerson(Person{FirstName: "Existing", LastName: "Person"})
 
-	store2 := NewPersonStore(dir)
+	store2 := NewPersonStore(dir, nil, nil)
 	store2.SeedPersons() // should be a no-op
 	if got := len(store2.ListPersons()); got != 1 {
 		t.Errorf("expected 1 person (not seeded), got %d", got)

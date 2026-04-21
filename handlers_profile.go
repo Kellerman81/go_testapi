@@ -379,10 +379,30 @@ func (h *ProfileHandler) actUnlinkGroup(c *gin.Context, route *Route) {
 
 func (h *ProfileHandler) actListPersons(c *gin.Context, route *Route) {
 	out := route.Output
-	items, err := transformItems(h.personStore.ListPersons(), out)
-	if err != nil {
-		respondMsg(c, http.StatusInternalServerError, err.Error())
-		return
+	persons := h.personStore.ListPersons()
+	var items []any
+	if out != nil && (out.MergeFirstContract != "" || out.MergeAllContracts != "") {
+		items = make([]any, 0, len(persons))
+		for _, p := range persons {
+			merged, err := mergePersonContracts(p, h.personStore, out)
+			if err != nil {
+				respondMsg(c, http.StatusInternalServerError, err.Error())
+				return
+			}
+			transformed, err := forwardTransform(merged, out)
+			if err != nil {
+				respondMsg(c, http.StatusInternalServerError, err.Error())
+				return
+			}
+			items = append(items, transformed)
+		}
+	} else {
+		var err error
+		items, err = transformItems(persons, out)
+		if err != nil {
+			respondMsg(c, http.StatusInternalServerError, err.Error())
+			return
+		}
 	}
 	if out.Raw {
 		c.IndentedJSON(http.StatusOK, items)
@@ -397,7 +417,17 @@ func (h *ProfileHandler) actGetPerson(c *gin.Context, route *Route) {
 		respondError(c, err)
 		return
 	}
-	item, err := forwardTransform(p, route.Output)
+	var item map[string]any
+	if route.Output != nil && (route.Output.MergeFirstContract != "" || route.Output.MergeAllContracts != "") {
+		merged, merr := mergePersonContracts(p, h.personStore, route.Output)
+		if merr != nil {
+			respondMsg(c, http.StatusInternalServerError, merr.Error())
+			return
+		}
+		item, err = forwardTransform(merged, route.Output)
+	} else {
+		item, err = forwardTransform(p, route.Output)
+	}
 	if err != nil {
 		respondMsg(c, http.StatusInternalServerError, err.Error())
 		return

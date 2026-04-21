@@ -88,6 +88,15 @@ type OIDCConfig struct {
 
 // ---- top-level config ----
 
+// CustomFieldsConfig declares extra fields to add to each entity type.
+// Keys are field names; values are the default assigned on creation.
+// Example: { "externalId": null, "department": "" }
+type CustomFieldsConfig struct {
+	Users     map[string]any `json:"users"`
+	Persons   map[string]any `json:"persons"`
+	Contracts map[string]any `json:"contracts"`
+}
+
 // Config holds all runtime configuration for the server.
 type Config struct {
 	Port        int              `json:"port"`
@@ -105,6 +114,8 @@ type Config struct {
 	// LogFile is the path to the request/response log file.
 	// Defaults to "go_testapi.log". Set to "" to disable file logging.
 	LogFile string `json:"log_file"`
+	// CustomFields declares extra attributes to initialise on every new entity.
+	CustomFields CustomFieldsConfig `json:"custom_fields"`
 }
 
 func defaultConfig() Config {

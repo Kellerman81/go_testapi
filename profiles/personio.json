@@ -10,27 +10,39 @@
       "token_field": "data.token",
       "body": { "success": true, "data": {} }
     },
+
     {
       "method": "GET",
       "path":   "/v1/company/employees",
       "action": "list_persons",
       "limiter": "person",
       "output": {
+        "merge_first_contract": "contract",
         "list_key":   "data",
         "list_extra": { "success": true },
         "item_key":   "attributes",
         "item_extra": { "type": "Employee" },
         "attribute_style": "labeled",
         "field_map": {
-          "id":              "id",
-          "first_name":      "first_name",
-          "last_name":       "last_name",
-          "birthday":        "hire_date",
-          "address.street":  "street",
-          "address.city":    "city",
-          "address.state":   "state",
-          "address.zip":     "zip",
-          "address.country": "country"
+          "id":                     "id",
+          "first_name":             "first_name",
+          "last_name":              "last_name",
+          "birthday":               "birthday",
+          "address.street":         "street",
+          "address.city":           "city",
+          "address.state":          "state",
+          "address.zip":            "zip",
+          "address.country":        "country",
+          "contract.start_date":    "hire_date",
+          "contract.end_date":      "contract_end_date",
+          "contract.department":    "department",
+          "contract.title":         "position",
+          "contract.manager":       "supervisor",
+          "contract.company":       "company"
+        },
+        "field_formats": {
+          "hire_date":           "yyyy-MM-dd'T'HH:mm:ssZ",
+          "contract_end_date":   "yyyy-MM-dd'T'HH:mm:ssZ"
         }
       }
     },
@@ -40,19 +52,30 @@
       "action": "get_person",
       "limiter": "person",
       "output": {
+        "merge_first_contract": "contract",
         "item_key":   "attributes",
         "item_extra": { "type": "Employee" },
         "attribute_style": "labeled",
         "field_map": {
-          "id":              "id",
-          "first_name":      "first_name",
-          "last_name":       "last_name",
-          "birthday":        "hire_date",
-          "address.street":  "street",
-          "address.city":    "city",
-          "address.state":   "state",
-          "address.zip":     "zip",
-          "address.country": "country"
+          "id":                     "id",
+          "first_name":             "first_name",
+          "last_name":              "last_name",
+          "birthday":               "birthday",
+          "address.street":         "street",
+          "address.city":           "city",
+          "address.state":          "state",
+          "address.zip":            "zip",
+          "address.country":        "country",
+          "contract.start_date":    "hire_date",
+          "contract.end_date":      "contract_end_date",
+          "contract.department":    "department",
+          "contract.title":         "position",
+          "contract.manager":       "supervisor",
+          "contract.company":       "company"
+        },
+        "field_formats": {
+          "hire_date":           "yyyy-MM-dd'T'HH:mm:ssZ",
+          "contract_end_date":   "yyyy-MM-dd'T'HH:mm:ssZ"
         }
       }
     },
@@ -65,10 +88,9 @@
         "item_key": "attributes",
         "attribute_style": "labeled",
         "field_map": {
-          "id":              "id",
           "first_name":      "first_name",
           "last_name":       "last_name",
-          "birthday":        "hire_date",
+          "birthday":        "birthday",
           "address.street":  "street",
           "address.city":    "city",
           "address.state":   "state",
@@ -77,19 +99,30 @@
         }
       },
       "output": {
+        "merge_first_contract": "contract",
         "item_key":   "attributes",
         "item_extra": { "type": "Employee" },
         "attribute_style": "labeled",
         "field_map": {
-          "id":              "id",
-          "first_name":      "first_name",
-          "last_name":       "last_name",
-          "birthday":        "hire_date",
-          "address.street":  "street",
-          "address.city":    "city",
-          "address.state":   "state",
-          "address.zip":     "zip",
-          "address.country": "country"
+          "id":                     "id",
+          "first_name":             "first_name",
+          "last_name":              "last_name",
+          "birthday":               "birthday",
+          "address.street":         "street",
+          "address.city":           "city",
+          "address.state":          "state",
+          "address.zip":            "zip",
+          "address.country":        "country",
+          "contract.start_date":    "hire_date",
+          "contract.end_date":      "contract_end_date",
+          "contract.department":    "department",
+          "contract.title":         "position",
+          "contract.manager":       "supervisor",
+          "contract.company":       "company"
+        },
+        "field_formats": {
+          "hire_date":           "yyyy-MM-dd'T'HH:mm:ssZ",
+          "contract_end_date":   "yyyy-MM-dd'T'HH:mm:ssZ"
         }
       }
     },
@@ -102,10 +135,9 @@
         "item_key": "attributes",
         "attribute_style": "labeled",
         "field_map": {
-          "id":              "id",
           "first_name":      "first_name",
           "last_name":       "last_name",
-          "birthday":        "hire_date",
+          "birthday":        "birthday",
           "address.street":  "street",
           "address.city":    "city",
           "address.state":   "state",
@@ -114,19 +146,30 @@
         }
       },
       "output": {
+        "merge_first_contract": "contract",
         "item_key":   "attributes",
         "item_extra": { "type": "Employee" },
         "attribute_style": "labeled",
         "field_map": {
-          "id":              "id",
-          "first_name":      "first_name",
-          "last_name":       "last_name",
-          "birthday":        "hire_date",
-          "address.street":  "street",
-          "address.city":    "city",
-          "address.state":   "state",
-          "address.zip":     "zip",
-          "address.country": "country"
+          "id":                     "id",
+          "first_name":             "first_name",
+          "last_name":              "last_name",
+          "birthday":               "birthday",
+          "address.street":         "street",
+          "address.city":           "city",
+          "address.state":          "state",
+          "address.zip":            "zip",
+          "address.country":        "country",
+          "contract.start_date":    "hire_date",
+          "contract.end_date":      "contract_end_date",
+          "contract.department":    "department",
+          "contract.title":         "position",
+          "contract.manager":       "supervisor",
+          "contract.company":       "company"
+        },
+        "field_formats": {
+          "hire_date":           "yyyy-MM-dd'T'HH:mm:ssZ",
+          "contract_end_date":   "yyyy-MM-dd'T'HH:mm:ssZ"
         }
       }
     },
@@ -136,6 +179,7 @@
       "action": "delete_person",
       "limiter": "person"
     },
+
     {
       "method": "GET",
       "path":   "/v1/company/employees/:id/contracts",

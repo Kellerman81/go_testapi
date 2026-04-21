@@ -14,16 +14,17 @@ import (
 
 // User is the core entity managed by the store.
 type User struct {
-	ID          string    `json:"id"           xml:"Id"`
-	Username    string    `json:"username"     xml:"Username"`
-	Email       string    `json:"email"        xml:"Email"`
-	FirstName   string    `json:"first_name"   xml:"FirstName"`
-	LastName    string    `json:"last_name"    xml:"LastName"`
-	Enabled     bool      `json:"enabled"      xml:"Enabled"`
-	Manager     string    `json:"manager"      xml:"Manager"`
-	Permissions []string  `json:"permissions"  xml:"Permissions>Permission,omitempty"`
-	CreatedAt   time.Time `json:"created_at"   xml:"CreatedAt"`
-	UpdatedAt   time.Time `json:"updated_at"   xml:"UpdatedAt"`
+	ID          string         `json:"id"                    xml:"Id"`
+	Username    string         `json:"username"              xml:"Username"`
+	Email       string         `json:"email"                 xml:"Email"`
+	FirstName   string         `json:"first_name"            xml:"FirstName"`
+	LastName    string         `json:"last_name"             xml:"LastName"`
+	Enabled     bool           `json:"enabled"               xml:"Enabled"`
+	Manager     string         `json:"manager"               xml:"Manager"`
+	Permissions []string       `json:"permissions"           xml:"Permissions>Permission,omitempty"`
+	Attributes  map[string]any `json:"attributes,omitempty"  xml:"-"`
+	CreatedAt   time.Time      `json:"created_at"            xml:"CreatedAt"`
+	UpdatedAt   time.Time      `json:"updated_at"            xml:"UpdatedAt"`
 }
 
 // UserList wraps a slice for XML serialisation (needs a root element).
@@ -42,15 +43,17 @@ var (
 
 // Store is a thread-safe user store with optional file persistence.
 type Store struct {
-	mu      sync.RWMutex
-	users   map[string]*User // keyed by ID
-	dataDir string           // empty = memory-only
+	mu           sync.RWMutex
+	users        map[string]*User // keyed by ID
+	dataDir      string           // empty = memory-only
+	customFields map[string]any   // default attributes for new users
 }
 
 // NewStore returns a store. When dataDir is non-empty it will load existing
 // data from disk and persist every mutation back to disk.
-func NewStore(dataDir string) *Store {
-	s := &Store{users: make(map[string]*User), dataDir: dataDir}
+// customFields defines the attribute keys and default values seeded into every new user.
+func NewStore(dataDir string, customFields map[string]any) *Store {
+	s := &Store{users: make(map[string]*User), dataDir: dataDir, customFields: customFields}
 	if dataDir != "" {
 		var users []User
 		if err := loadJSON(s.filePath(), &users); err != nil {
@@ -136,6 +139,22 @@ func (s *Store) Get(id string) (User, error) {
 	return *u, nil
 }
 
+// initAttributes returns a fresh attributes map seeded with the store defaults,
+// then with any values from patch merged on top.
+func (s *Store) initAttributes(patch map[string]any) map[string]any {
+	if len(s.customFields) == 0 && len(patch) == 0 {
+		return nil
+	}
+	attrs := make(map[string]any, len(s.customFields))
+	for k, v := range s.customFields {
+		attrs[k] = v
+	}
+	for k, v := range patch {
+		attrs[k] = v
+	}
+	return attrs
+}
+
 // Create inserts a new user. Username must be unique.
 func (s *Store) Create(u User) (User, error) {
 	s.mu.Lock()
@@ -152,6 +171,7 @@ func (s *Store) Create(u User) (User, error) {
 	if u.Permissions == nil {
 		u.Permissions = []string{}
 	}
+	u.Attributes = s.initAttributes(u.Attributes)
 	s.users[u.ID] = &u
 	s.persist()
 	return u, nil
@@ -184,6 +204,12 @@ func (s *Store) Update(id string, patch User) (User, error) {
 	}
 	if patch.Manager != "" {
 		u.Manager = patch.Manager
+	}
+	for k, v := range patch.Attributes {
+		if u.Attributes == nil {
+			u.Attributes = make(map[string]any)
+		}
+		u.Attributes[k] = v
 	}
 	u.UpdatedAt = time.Now()
 	s.persist()

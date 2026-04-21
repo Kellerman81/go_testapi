@@ -40,6 +40,18 @@ type OutputMapping struct {
 	// Example: "yyyy-MM-dd'T'HH:mm:ssZ" → "2014-11-09T00:00:00+00:00"
 	//          "dd.MM.yyyy"             → "09.11.2014"
 	FieldFormats map[string]string `json:"field_formats"`
+
+	// MergeFirstContract: when non-empty, the person's first contract is fetched and
+	// placed under this key in the response map. Sub-fields are addressable via
+	// dot-notation ("contract.start_date") and the whole object via the key itself.
+	// Example: "merge_first_contract": "contract"
+	// Only meaningful on list_persons / get_person routes.
+	MergeFirstContract string `json:"merge_first_contract"`
+
+	// MergeAllContracts: when non-empty, all contracts for the person are placed as
+	// an array under this key. Map the key directly in field_map to include the array.
+	// Example: "merge_all_contracts": "contracts"
+	MergeAllContracts string `json:"merge_all_contracts"`
 }
 
 // Route maps one external HTTP endpoint to one internal action.
@@ -349,6 +361,41 @@ func reverseFieldLookup(fieldMap map[string]string, externalKey string) string {
 		}
 	}
 	return ""
+}
+
+// mergePersonContracts converts a Person to a map and optionally merges contract
+// data based on the output mapping flags:
+//   - MergeFirstContract (non-empty string): first contract placed under that key
+//   - MergeAllContracts  (non-empty string): all contracts as array under that key
+func mergePersonContracts(p Person, ps *PersonStore, out *OutputMapping) (map[string]any, error) {
+	base, err := structToMap(p)
+	if err != nil {
+		return nil, err
+	}
+	if out.MergeFirstContract == "" && out.MergeAllContracts == "" {
+		return base, nil
+	}
+	contracts, err := ps.ListContracts(p.ID)
+	if err != nil {
+		return base, nil
+	}
+	if out.MergeFirstContract != "" && len(contracts) > 0 {
+		ctMap, err := structToMap(contracts[0])
+		if err == nil {
+			base[out.MergeFirstContract] = ctMap
+		}
+	}
+	if out.MergeAllContracts != "" {
+		all := make([]any, 0, len(contracts))
+		for _, c := range contracts {
+			cm, err := structToMap(c)
+			if err == nil {
+				all = append(all, cm)
+			}
+		}
+		base[out.MergeAllContracts] = all
+	}
+	return base, nil
 }
 
 // filterByEq filters a User slice by matching an internal field value (case-insensitive).

@@ -9,7 +9,7 @@ import (
 
 // newTestStore returns a memory-backed store with no seed data.
 func newTestStore() *Store {
-	return NewStore("")
+	return NewStore("", nil)
 }
 
 // newFileStore returns a file-backed store rooted in a temp directory.
@@ -17,7 +17,7 @@ func newTestStore() *Store {
 func newFileStore(t *testing.T) (*Store, func()) {
 	t.Helper()
 	dir := t.TempDir()
-	return NewStore(dir), func() { os.RemoveAll(dir) }
+	return NewStore(dir, nil), func() { os.RemoveAll(dir) }
 }
 
 // ---- Seed ----
@@ -260,7 +260,7 @@ func TestStore_FilePersistence_RoundTrip(t *testing.T) {
 	dir := t.TempDir()
 
 	// Create a user in store1, then close it.
-	store1 := NewStore(dir)
+	store1 := NewStore(dir, nil)
 	u, err := store1.Create(User{Username: "persisted", Email: "p@example.com", FirstName: "Per", LastName: "Sisted"})
 	if err != nil {
 		t.Fatalf("Create: %v", err)
@@ -273,7 +273,7 @@ func TestStore_FilePersistence_RoundTrip(t *testing.T) {
 	}
 
 	// Open a fresh store from the same directory — it should reload the data.
-	store2 := NewStore(dir)
+	store2 := NewStore(dir, nil)
 	loaded, err := store2.Get(u.ID)
 	if err != nil {
 		t.Fatalf("Get after reload: %v", err)
@@ -289,10 +289,10 @@ func TestStore_FilePersistence_RoundTrip(t *testing.T) {
 func TestStore_FilePersistence_SeedSkippedWhenDataExists(t *testing.T) {
 	dir := t.TempDir()
 
-	store1 := NewStore(dir)
+	store1 := NewStore(dir, nil)
 	store1.Create(User{Username: "existing"})
 
-	store2 := NewStore(dir)
+	store2 := NewStore(dir, nil)
 	store2.Seed() // should not add the demo users because the store already has data
 	users := store2.List()
 	if len(users) != 1 {

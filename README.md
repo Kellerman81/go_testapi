@@ -77,6 +77,24 @@ Copy `config.template.json` to `config.json` and adjust as needed.
 | `oidc.permissions_claim` | Token claim containing groups/roles |
 | `oidc.skip_signature_verification` | Skip ID token signature check (for HS256 IdPs) |
 
+### Custom Fields (optional)
+
+Extra attributes can be declared for each entity type. Every newly created entity is seeded with the configured defaults. The values are stored and returned under an `"attributes"` key alongside the standard fields.
+
+```json
+"custom_fields": {
+  "users":     { "externalId": null, "source": "manual" },
+  "persons":   { "employeeNumber": null },
+  "contracts": { "costCode": null }
+}
+```
+
+Keys and default values are arbitrary. `null`, `""`, `0`, or any JSON value are all valid defaults.
+
+**Standard REST API** — send `"attributes": {"externalId": "abc"}` in any create or update body. The field is returned in all responses for that entity type.
+
+**Profile system** — reference custom fields as `"attributes.fieldname"` in any `field_map` (both `input` and `output`). See the Profile Guide for examples.
+
 ---
 
 ## Authentication

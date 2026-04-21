@@ -16,8 +16,8 @@ func main() {
 	cfg := LoadConfig(cfgPath)
 
 	dataDir := resolveDataDir(cfg)
-	store := NewStore(dataDir)
-	personStore := NewPersonStore(dataDir)
+	store := NewStore(dataDir, cfg.CustomFields.Users)
+	personStore := NewPersonStore(dataDir, cfg.CustomFields.Persons, cfg.CustomFields.Contracts)
 	if cfg.SeedData {
 		store.Seed()
 		personStore.SeedPersons()

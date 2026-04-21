@@ -18,14 +18,15 @@ type Address struct {
 }
 
 type Person struct {
-	ID        string    `json:"id"         xml:"Id"`
-	FirstName string    `json:"first_name" xml:"FirstName"`
-	LastName  string    `json:"last_name"  xml:"LastName"`
-	Birthday  string    `json:"birthday"   xml:"Birthday"` // YYYY-MM-DD
-	Address   Address   `json:"address"    xml:"Address"`
-	Phones    []string  `json:"phones"     xml:"Phones>Phone,omitempty"`
-	CreatedAt time.Time `json:"created_at" xml:"CreatedAt"`
-	UpdatedAt time.Time `json:"updated_at" xml:"UpdatedAt"`
+	ID         string         `json:"id"                   xml:"Id"`
+	FirstName  string         `json:"first_name"           xml:"FirstName"`
+	LastName   string         `json:"last_name"            xml:"LastName"`
+	Birthday   string         `json:"birthday"             xml:"Birthday"` // YYYY-MM-DD
+	Address    Address        `json:"address"              xml:"Address"`
+	Phones     []string       `json:"phones"               xml:"Phones>Phone,omitempty"`
+	Attributes map[string]any `json:"attributes,omitempty" xml:"-"`
+	CreatedAt  time.Time      `json:"created_at"           xml:"CreatedAt"`
+	UpdatedAt  time.Time      `json:"updated_at"           xml:"UpdatedAt"`
 }
 
 // PersonList wraps a slice for XML serialisation.
@@ -34,16 +35,17 @@ type PersonList struct {
 }
 
 type Contract struct {
-	ID         string    `json:"id"          xml:"Id"`
-	PersonID   string    `json:"person_id"   xml:"PersonId"`
-	Manager    string    `json:"manager"     xml:"Manager"`
-	Department string    `json:"department"  xml:"Department"`
-	Company    string    `json:"company"     xml:"Company"`
-	Title      string    `json:"title"       xml:"Title"`
-	StartDate  string    `json:"start_date"  xml:"StartDate"` // YYYY-MM-DD
-	EndDate    string    `json:"end_date"    xml:"EndDate"`   // YYYY-MM-DD, empty = current
-	CreatedAt  time.Time `json:"created_at"  xml:"CreatedAt"`
-	UpdatedAt  time.Time `json:"updated_at"  xml:"UpdatedAt"`
+	ID         string         `json:"id"                   xml:"Id"`
+	PersonID   string         `json:"person_id"            xml:"PersonId"`
+	Manager    string         `json:"manager"              xml:"Manager"`
+	Department string         `json:"department"           xml:"Department"`
+	Company    string         `json:"company"              xml:"Company"`
+	Title      string         `json:"title"                xml:"Title"`
+	StartDate  string         `json:"start_date"           xml:"StartDate"` // YYYY-MM-DD
+	EndDate    string         `json:"end_date"             xml:"EndDate"`   // YYYY-MM-DD, empty = current
+	Attributes map[string]any `json:"attributes,omitempty" xml:"-"`
+	CreatedAt  time.Time      `json:"created_at"           xml:"CreatedAt"`
+	UpdatedAt  time.Time      `json:"updated_at"           xml:"UpdatedAt"`
 }
 
 // ContractList wraps a slice for XML serialisation.
@@ -66,19 +68,24 @@ type personFile struct {
 // PersonStore is a thread-safe store for persons and their contracts,
 // with optional file persistence.
 type PersonStore struct {
-	mu        sync.RWMutex
-	persons   map[string]*Person
-	contracts map[string]*Contract // keyed by contract ID
-	dataDir   string               // empty = memory-only
+	mu               sync.RWMutex
+	persons          map[string]*Person
+	contracts        map[string]*Contract // keyed by contract ID
+	dataDir          string               // empty = memory-only
+	personFields     map[string]any       // default attributes for new persons
+	contractFields   map[string]any       // default attributes for new contracts
 }
 
 // NewPersonStore returns a store. When dataDir is non-empty it loads
 // existing data from disk and persists every mutation.
-func NewPersonStore(dataDir string) *PersonStore {
+// personFields / contractFields define attribute keys and defaults for each entity type.
+func NewPersonStore(dataDir string, personFields, contractFields map[string]any) *PersonStore {
 	s := &PersonStore{
-		persons:   make(map[string]*Person),
-		contracts: make(map[string]*Contract),
-		dataDir:   dataDir,
+		persons:        make(map[string]*Person),
+		contracts:      make(map[string]*Contract),
+		dataDir:        dataDir,
+		personFields:   personFields,
+		contractFields: contractFields,
 	}
 	if dataDir != "" {
 		var pf personFile
@@ -214,6 +221,21 @@ func (s *PersonStore) GetPerson(id string) (Person, error) {
 	return *p, nil
 }
 
+// initAttrs builds an attributes map seeded with defaults then patched with provided values.
+func initAttrs(defaults, patch map[string]any) map[string]any {
+	if len(defaults) == 0 && len(patch) == 0 {
+		return nil
+	}
+	attrs := make(map[string]any, len(defaults))
+	for k, v := range defaults {
+		attrs[k] = v
+	}
+	for k, v := range patch {
+		attrs[k] = v
+	}
+	return attrs
+}
+
 func (s *PersonStore) CreatePerson(p Person) (Person, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -224,6 +246,7 @@ func (s *PersonStore) CreatePerson(p Person) (Person, error) {
 	if p.Phones == nil {
 		p.Phones = []string{}
 	}
+	p.Attributes = initAttrs(s.personFields, p.Attributes)
 	s.persons[p.ID] = &p
 	s.persist()
 	return p, nil
@@ -264,6 +287,12 @@ func (s *PersonStore) UpdatePerson(id string, patch Person) (Person, error) {
 	}
 	if patch.Phones != nil {
 		p.Phones = patch.Phones
+	}
+	for k, v := range patch.Attributes {
+		if p.Attributes == nil {
+			p.Attributes = make(map[string]any)
+		}
+		p.Attributes[k] = v
 	}
 	p.UpdatedAt = time.Now()
 	s.persist()
@@ -344,6 +373,7 @@ func (s *PersonStore) CreateContract(personID string, c Contract) (Contract, err
 	c.PersonID = personID
 	c.CreatedAt = now
 	c.UpdatedAt = now
+	c.Attributes = initAttrs(s.contractFields, c.Attributes)
 	s.contracts[c.ID] = &c
 	s.persist()
 	return c, nil
@@ -376,6 +406,12 @@ func (s *PersonStore) UpdateContract(personID, contractID string, patch Contract
 	}
 	// EndDate can be explicitly cleared by sending "" — always copy it
 	c.EndDate = patch.EndDate
+	for k, v := range patch.Attributes {
+		if c.Attributes == nil {
+			c.Attributes = make(map[string]any)
+		}
+		c.Attributes[k] = v
+	}
 	c.UpdatedAt = time.Now()
 	s.persist()
 	return *c, nil
