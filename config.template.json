@@ -9,6 +9,7 @@
   "token_expiry_s": 3600,
 
   "seed_data": true,
+  "log_file": "testapi.log",
 
   "storage": {
     "_comment": [
